@@ -6,16 +6,13 @@
   --azul: #1a3f7d;
 }
 
-body { 
+body {
   font-size: 16px;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-}
-
-.fundo {
-  background-image: url("/public/inosuke.webp");
 }

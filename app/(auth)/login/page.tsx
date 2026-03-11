@@ -1,6 +1,7 @@
 "use client";
 import { LogoPositivo } from "@/app/components/Logo/LogoPositivo";
 import { BsDoorOpen } from "react-icons/bs";
+import Image from "next/image";
 
 export default function Login() {
   const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -15,14 +16,21 @@ export default function Login() {
 
   return (
     <>
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
-        <p>APPEAR</p>
+      <div className="bg-radial from-(--azul) via-(--bg-default) to-(--azul) hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
+        <div className="">
+          <Image
+            src="/logo_horizontal_negativo_branco.png"
+            width={300}
+            height={300}
+            alt="logo-img"
+          />
+        </div>
       </div>
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="flex flex-col gap-8 justify-center w-full max-w-md">
           <div className="flex gap-4 items-center">
-            <LogoPositivo direction="horizontal"/>
-            <h1 className="text-xl font-semibold hidden lg:block">MoviMenta</h1>
+            <LogoPositivo direction="horizontal" />
+            <h1 className="text-2xl font-semibold hidden lg:block">MoviMenta</h1>
           </div>
           <div className="grid gap-2 border-b border-gray-400 pb-2">
             <h2 className="text-2xl font-bold">Bem-vindo de volta</h2>
@@ -32,26 +40,30 @@ export default function Login() {
           </div>
           <form className="items-center space-y-4" onSubmit={sendLogin}>
             <div className="grid gap-2">
-              <label htmlFor="email-input" className="font-bold">E-mail</label>
+              <label htmlFor="email-input" className="font-bold">
+                E-mail
+              </label>
               <input
                 id="email-input"
                 name="email-input"
                 type="email"
-                className="border border-gray-300 rounded-lg p-2"
+                className="border border-gray-300 rounded-lg bg-white p-2 cursor-pointer shadow-md focus:scale-105 transition-all duration-100"
               />
             </div>
             <div className="grid gap-2">
-              <label htmlFor="pwd-input" className="font-bold">Senha</label>
+              <label htmlFor="pwd-input" className="font-bold">
+                Senha
+              </label>
               <input
                 id="pwd-input"
                 name="pwd-input"
                 type="password"
-                className="border border-gray-300 rounded-lg p-2 "
+                className="border border-gray-300 rounded-lg p-2 bg-white cursor-pointer shadow-md focus:scale-105 transition-all duration-100"
               />
             </div>
             <button
               type="submit"
-              className="bg-(--azul) text-white w-full rounded-lg p-2 flex items-center justify-center gap-4"
+              className="bg-(--azul) text-white w-full rounded-lg p-2 flex items-center justify-center gap-4 cursor-pointer transtion-all duration-100 active:scale-95"
             >
               Entrar <BsDoorOpen />
             </button>
