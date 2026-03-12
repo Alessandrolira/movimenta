@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --bg-default: #e9e9e9;
+  --bg-default: #e4e4e4;
   --branco: #f4f4f4;
   --cinza: #787878;
   --azul: #1a3f7d;
@@ -10,6 +10,7 @@
 body {
   font-size: 16px;
   font-family: "Plus Jakarta Sans", sans-serif;
+  background-color: var(--bg-default);
 }
 
 select {
