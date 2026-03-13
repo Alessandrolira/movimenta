@@ -30,7 +30,9 @@ export default function Login() {
         <div className="flex flex-col gap-8 justify-center w-full max-w-md">
           <div className="flex gap-4 items-center lg:hidden">
             <LogoPositivo direction="horizontal" />
-            <h1 className="text-2xl font-semibold hidden lg:block">MoviMenta</h1>
+            <h1 className="text-2xl font-semibold hidden lg:block">
+              MoviMenta
+            </h1>
           </div>
           <div className="grid gap-2 border-b border-gray-400 pb-2">
             <h2 className="text-2xl font-bold">Bem-vindo de volta</h2>
