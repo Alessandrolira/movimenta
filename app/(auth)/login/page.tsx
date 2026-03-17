@@ -23,8 +23,12 @@ export default function Login() {
     const email = fd.get("email-input");
     const password = fd.get("pwd-input");
 
-    const res = await axios.post(`${base_url}/login`, {email, password})
-    console.log(await res)
+    const res = await axios.post(`${base_url}/auth/login`, {
+      login: email,
+      password: password,
+    });
+    const data = res
+    console.log(data.data.token)
   };
 
   return (
