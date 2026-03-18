@@ -1,9 +1,30 @@
 "use client";
 
 import { LogoPositivo } from "@/app/components/Logo/LogoPositivo";
+import { api } from "@/services/api";
 import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function PreRegister() {
+  const router = useRouter();
+  const validationToken = useSearchParams().get("token");
+
+  const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const fd = new FormData(event.currentTarget);
+    const password = fd.get("pwd-input");
+
+    const res = await api.post(`/auth/ativar?token=${validationToken}`, {
+      password: password,
+    });
+    const data = res;
+    console.log(data);
+    if (res.status == 200) {
+      router.push("/login");
+    }
+  };
+
   return (
     <>
       <div className="bg-radial from-(--azul) via-blue-400 to-(--azul) hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
@@ -30,7 +51,7 @@ export default function PreRegister() {
               Crie uma senha segura para ativar sua conta.
             </p>
           </div>
-          <form className="items-center space-y-4">
+          <form className="items-center space-y-4" onSubmit={sendLogin}>
             <div className="grid gap-2">
               <label htmlFor="pwd-input" className="font-bold">
                 Senha:
@@ -61,7 +82,8 @@ export default function PreRegister() {
             </button>
           </form>
           <p className="opacity-60">
-            A ativação de conta é válida até <b>8 horas</b> após o recebimento do email.
+            A ativação de conta é válida até <b>8 horas</b> após o recebimento
+            do email.
           </p>
         </div>
       </div>

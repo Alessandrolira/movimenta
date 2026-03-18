@@ -19,6 +19,20 @@ export default function Page() {
   const [equipes, setEquipes] = useState();
   const [movements, setMovements] = useState<MovementTypes[]>([]);
 
+  console.log(localStorage.getItem("token"))
+
+  useEffect(() => {
+    async function getMoviments() {
+      try {
+        const res = await api.get("/movimentacao");
+        setMovements(res.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    getMoviments();
+  }, []);
+
   return (
     <div className="space-y-6 p-8">
       <div className="space-y-2">
