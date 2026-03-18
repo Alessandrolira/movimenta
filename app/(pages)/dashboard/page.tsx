@@ -6,8 +6,6 @@ import { Clock, Files, Layers, Plus } from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
 import { useEffect, useState } from "react";
 import { api } from "@/services/api";
-import { InternalAxiosRequestConfig } from "axios";
-import { error } from "console";
 
 export default function Page() {
   const stats = [
@@ -16,15 +14,13 @@ export default function Page() {
     { label: "Em Análise", value: 0, icon: Clock, color: "blue-icon" },
     { label: "Concluídos", value: 0, icon: Files, color: "green-icon" },
   ];
-  const [equipes, setEquipes] = useState();
   const [movements, setMovements] = useState<MovementTypes[]>([]);
-
-  console.log(localStorage.getItem("token"))
 
   useEffect(() => {
     async function getMoviments() {
       try {
         const res = await api.get("/movimentacao");
+        console.log(res);
         setMovements(res.data || []);
       } catch (err) {
         console.error(err);
@@ -59,17 +55,23 @@ export default function Page() {
           <p className="hidden lg:block">Nova Movimentação</p>
         </button>
       </div>
-      {movements.map((movement, i) => (
-        <MovementCard
-          key={i}
-          id={movement.id}
-          tipo={movement.tipo}
-          beneficiario={movement.beneficiario}
-          data={movement.data}
-          descricao={movement.descricao}
-          status={movement.status}
-        />
-      ))}
+      {movements.length > 0 ? (
+        movements.map((movement, i) => (
+          <MovementCard
+            key={i}
+            id={movement.id}
+            tipo={movement.tipo}
+            beneficiario={movement.beneficiario}
+            data={movement.data}
+            descricao={movement.descricao}
+            status={movement.status}
+          />
+        ))
+      ) : (
+        <p className="text-center text-2xl italic opacity-60">
+          Não há movimentações realizadas
+        </p>
+      )}
     </div>
   );
 }
