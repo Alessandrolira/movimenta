@@ -4,10 +4,12 @@ import { BsDoorOpen } from "react-icons/bs";
 import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { cookies } from "next/headers";
 
 export default function Login() {
   const router = useRouter();
   const base_url = process.env.NEXT_PUBLIC_API_JAVA;
+  const cookieStore = cookies();
 
   // const getPaymentOptions = async () => {
   //   try {
@@ -30,9 +32,9 @@ export default function Login() {
       password: password,
     });
     const data = res;
-    console.log(data)
+    console.log(data);
     if (res.status == 200) {
-      localStorage.setItem("token", data.data.token);
+      (await cookieStore).set("token", data.data.token);
       console.log("Redirecionando...");
       router.push("/dashboard");
     }
