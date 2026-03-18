@@ -4,63 +4,20 @@ import { MovementCard } from "@/app/components/MovementCard/MovementCard";
 import { MovementTypes } from "@/app/types/MovementTypes";
 import { Clock, Files, Layers, Plus } from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
+import { api } from "@/services/api";
+import { InternalAxiosRequestConfig } from "axios";
+import { error } from "console";
 
 export default function Page() {
-  const api = process.env.NEXT_PUBLIC_API_JAVA || "";
   const stats = [
     { label: "Total", value: 0, icon: Files, color: "gray-icon" },
     { label: "Pendentes", value: 0, icon: Layers, color: "orange-icon" },
     { label: "Em Análise", value: 0, icon: Clock, color: "blue-icon" },
     { label: "Concluídos", value: 0, icon: Files, color: "green-icon" },
   ];
-
-  useEffect(() => {
-    async function getEquipes() {
-      const res = await fetch(`${api}/equipes`, {
-        method: "GET"
-      }) 
-      const data = await res;
-      console.log(data)
-    }
-    getEquipes();
-  }, [])
-
-  const movements: MovementTypes[] = [
-    {
-      id: "1",
-      tipo: "inclusao",
-      beneficiario: "Maria Silva",
-      data: "2026-03-08",
-      status: "pendente",
-      descricao: "Inclusão de dependente - cônjuge",
-    },
-    {
-      id: "2",
-      tipo: "exclusao",
-      beneficiario: "João Santos",
-      data: "2026-03-05",
-      status: "em_analise",
-      descricao: "Exclusão por desligamento",
-    },
-    {
-      id: "3",
-      tipo: "alteracao",
-      beneficiario: "Ana Oliveira",
-      data: "2026-03-01",
-      status: "concluido",
-      descricao: "Alteração de plano - upgrade",
-    },
-    {
-      id: "4",
-      tipo: "inclusao",
-      beneficiario: "Carlos Souza",
-      data: "2026-02-28",
-      status: "concluido",
-      descricao: "Inclusão de novo titular",
-    },
-  ];
+  const [equipes, setEquipes] = useState();
+  const [movements, setMovements] = useState<MovementTypes[]>([]);
 
   return (
     <div className="space-y-6 p-8">

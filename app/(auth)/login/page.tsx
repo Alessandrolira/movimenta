@@ -29,12 +29,13 @@ export default function Login() {
       login: email,
       password: password,
     });
-    const data = res
+    const data = res;
+    console.log(data)
     if (res.status == 200) {
       localStorage.setItem("token", data.data.token);
+      console.log("Redirecionando...");
+      router.push("/dashboard");
     }
-    console.log("Redirecionando...")
-    router.push("/dashboard")
   };
 
   return (
