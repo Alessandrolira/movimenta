@@ -3,8 +3,10 @@ import { LogoPositivo } from "@/app/components/Logo/LogoPositivo";
 import { BsDoorOpen } from "react-icons/bs";
 import Image from "next/image";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
   const base_url = process.env.NEXT_PUBLIC_API_JAVA;
 
   // const getPaymentOptions = async () => {
@@ -28,12 +30,16 @@ export default function Login() {
       password: password,
     });
     const data = res
-    console.log(data.data.token)
+    if (res.status == 200) {
+      localStorage.setItem("token", data.data.token);
+    }
+    console.log("Redirecionando...")
+    router.push("/dashboard")
   };
 
   return (
     <>
-      <div className="bg-radial from-(--azul) via-blue-200 to-(--azul) hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
+      <div className="bg-radial from-(--azul) via-blue-400 to-(--azul) hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
         <div className="">
           <Image
             src="/logo_horizontal_negativo_branco.png"
