@@ -4,10 +4,15 @@ import { BsDoorOpen } from "react-icons/bs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
-import { setAuthCookie } from "@/services/cookies";
+import { deleteAuthCookie, setAuthCookie } from "@/services/cookies";
+import { useEffect } from "react";
 
 export default function Login() {
   const router = useRouter();
+
+  useEffect(() => {
+    deleteAuthCookie("token");
+  }, []);
 
   const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,7 +28,7 @@ export default function Login() {
     const data = res;
     console.log(data);
     if (res.status == 200) {
-      await setAuthCookie(data.data.token)
+      await setAuthCookie(data.data.token);
       console.log("Redirecionando...");
       router.push("/dashboard");
     }

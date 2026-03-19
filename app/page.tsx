@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { verifyConnected } from "./utils/verifyConnected";
 
-export default function Home() {
-  redirect("/login")
+export default async function Home() {
+  await verifyConnected()
 }
