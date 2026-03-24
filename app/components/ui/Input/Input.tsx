@@ -2,10 +2,14 @@ export const Input = ({
   id,
   type,
   placeholder,
+  value,
+  onChange,
 }: {
   id: string;
   type: string;
   placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
   return (
     <input

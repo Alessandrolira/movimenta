@@ -33,52 +33,58 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="space-y-6 p-8">
-      {toggleNewMovement && <NewMovementCard onClick={() => setToggleNewMovement(false)}/>}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Olá, (Cliente)</h1>
-        <h2 className="opacity-60">
-          Gerencie as movimentações do seu plano de saúde
-        </h2>
-      </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <StatCard
-            key={i}
-            label={stat.label}
-            value={stat.value}
-            icon={stat.icon}
-            color={stat.color}
-          />
-        ))}
-      </div>
-      <div className="flex justify-between items-center p-2 w-full">
-        <h2 className="text-2xl font-semibold tracking-wide ">Movimentações</h2>
-        <button
-          onClick={() => setToggleNewMovement(true)}
-          className="flex gap-2 bg-(--blue-button) p-2 text-white cursor-pointer rounded-lg hover:bg-(--azul) active:scale-95 transition duration-100"
-        >
-          <Plus className="scale-70" />
-          <p className="hidden lg:block">Nova Movimentação</p>
-        </button>
-      </div>
-      {movements.length > 0 ? (
-        movements.map((movement, i) => (
-          <MovementCard
-            key={i}
-            id={movement.id}
-            tipo={movement.tipo}
-            beneficiario={movement.beneficiario}
-            data={movement.data}
-            descricao={movement.descricao}
-            status={movement.status}
-          />
-        ))
-      ) : (
-        <p className="text-center text-2xl italic opacity-60">
-          Não há movimentações realizadas
-        </p>
+    <>
+      {toggleNewMovement && (
+        <NewMovementCard onClick={() => setToggleNewMovement(false)} />
       )}
-    </div>
+      <div className="space-y-6 p-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold">Olá, (Cliente)</h1>
+          <h2 className="opacity-60">
+            Gerencie as movimentações do seu plano de saúde
+          </h2>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, i) => (
+            <StatCard
+              key={i}
+              label={stat.label}
+              value={stat.value}
+              icon={stat.icon}
+              color={stat.color}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between items-center p-2 w-full">
+          <h2 className="text-2xl font-semibold tracking-wide ">
+            Movimentações
+          </h2>
+          <button
+            onClick={() => setToggleNewMovement(true)}
+            className="flex gap-2 bg-(--blue-button) p-2 text-white cursor-pointer rounded-lg hover:bg-(--azul) active:scale-95 transition duration-100"
+          >
+            <Plus className="scale-70" />
+            <p className="hidden lg:block">Nova Movimentação</p>
+          </button>
+        </div>
+        {movements.length > 0 ? (
+          movements.map((movement, i) => (
+            <MovementCard
+              key={i}
+              id={movement.id}
+              tipo={movement.tipo}
+              beneficiario={movement.beneficiario}
+              data={movement.data}
+              descricao={movement.descricao}
+              status={movement.status}
+            />
+          ))
+        ) : (
+          <p className="text-center text-2xl italic opacity-60">
+            Não há movimentações realizadas
+          </p>
+        )}
+      </div>
+    </>
   );
 }
