@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/services/api";
 import { getAuthCookie } from "@/services/cookies";
 import NewMovementCard from "@/app/components/NewMovementCard/NewMovementCard";
+import { CompanyTypes } from "@/app/types/CompanyTypes";
 
 export default function Page() {
   const stats = [
@@ -18,6 +19,22 @@ export default function Page() {
   ];
   const [movements, setMovements] = useState<MovementTypes[]>([]);
   const [toggleNewMovement, setToggleNewMovement] = useState<boolean>(false);
+  const [companies, setCompanies] = useState<{ label: string, value: string}[]>([]);
+
+  useEffect(() => {
+    async function getCompanies() {
+      try {
+        const res = await api.get("/empresas");
+        setCompanies(res.data.map((company: any) => ({
+          label: company.nome,
+          value: company.idEmpresa,
+        })));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    getCompanies();
+  }, []);
 
   useEffect(() => {
     async function getMoviments() {
@@ -32,10 +49,15 @@ export default function Page() {
     getMoviments();
   }, []);
 
+  
+
   return (
     <>
       {toggleNewMovement && (
-        <NewMovementCard onClick={() => setToggleNewMovement(false)} />
+        <NewMovementCard
+          companies={companies}
+          onClick={() => setToggleNewMovement(false)}
+        />
       )}
       <div className="space-y-6 p-8">
         <div className="space-y-2">

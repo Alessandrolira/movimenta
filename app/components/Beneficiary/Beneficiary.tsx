@@ -156,7 +156,7 @@ export default function Beneficiary({ data, onChange }: BeneficiaryProps) {
           value={data.dependency}
         />
       </div>
-      <div className="space-y-2">
+      <div className={`space-y-2 ${data.dependency === "titular" ? "hidden" : ""}`}>
         <Label htmlFor="name-titular">Nome Titular</Label>
         <Input
           value={data.titularName}
@@ -171,6 +171,7 @@ export default function Beneficiary({ data, onChange }: BeneficiaryProps) {
         <Input
           value={data.plan}
           onChange={(e) => handleChange("plan", e.target.value)}
+          placeholder="Ex: SMART 600 QP"
           type="string"
           id="plan"
         />

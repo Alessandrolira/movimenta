@@ -1,3 +1,4 @@
+import { BeneficiaryTypes } from "@/app/types/Beneficiary";
 import { MovementTypes } from "@/app/types/MovementTypes";
 import {
   CheckCircle2,
@@ -13,7 +14,7 @@ import {
 interface MovementProps {
   id: string;
   tipo: "inclusao" | "exclusao" | "alteracao" | "segunda-via";
-  beneficiario: string;
+  beneficiario: BeneficiaryTypes;
   data: string;
   status: "pendente" | "em_analise" | "concluido";
   descricao: string;
@@ -95,7 +96,7 @@ export const MovementCard = ({
         </div>
         <div className="items-center">
           <div className="flex items-center justify-start gap-2">
-            <p className="font-semibold text-sm lg:text-base">{beneficiario}</p>
+            <p className="font-semibold text-sm lg:text-base">{beneficiario.name}</p>
             <p
               className={`text-xs rounded-full px-2 border-2 ${tipoInfo.badgeClass}`}
             >
