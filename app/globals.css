@@ -2,17 +2,22 @@
 
 :root {
   --bg-default: #efefef;
-  --branco: #ccd3d9;
-  --cinza: #aeb7bf;
-  --azul: #419fd9;
+  --branco: #f4f4f4;
+  --cinza: #787878;
+  --azul: #1a3f7d;
   --gray-icon: #9e9e9e;
-  --blue-icon: ##00f0ff;
+  --blue-icon: #1d5cb9;
   --blue-button: #153161;
   --green-icon: #42ad2c;
   --orange-icon: #f0b12b;
   --green-card: #9bdd8e;
   --black: #4c5359;
   --azul-escuro: #023859;
+  --light-gray: #f9f9f9;
+  --green-btn: #4ac432;
+  --green-hover: #40a32d;
+  --red-hover: #a32d40;
+  --red-btn: #c4324a;
 }
 
 body {
