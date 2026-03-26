@@ -4,15 +4,11 @@ import { BsDoorOpen } from "react-icons/bs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
-import { deleteAuthCookie, setAuthCookie } from "@/services/cookies";
-import { useEffect } from "react";
+import { setAuthCookie } from "@/services/cookies";
 
 export default function Login() {
   const router = useRouter();
 
-  useEffect(() => {
-    deleteAuthCookie("token");
-  }, []);
 
   const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

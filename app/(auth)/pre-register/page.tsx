@@ -1,12 +1,55 @@
 "use client";
 
 import { LogoPositivo } from "@/app/components/Logo/LogoPositivo";
+import { CustomSelect } from "@/app/components/ui/Select/Select";
+import { verifyConnected } from "@/app/utils/verifyConnected";
+import { api } from "@/services/api";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function PreRegister() {
-  const param = useParams();
-  const idEmpresa = param.idEmpresa;
+  const [companies, setCompanies] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [companySelect, setCompanySelect] = useState("Seleciona a empresa");
+  console.log(companySelect);
+  useEffect(() => {
+    verifyConnected(window.location.href);
+    getcompanies();
+  }, []);
+
+  async function getcompanies() {
+    try {
+      const res = await api.get("/empresas");
+      setCompanies(
+        res.data.map((company: any) => ({
+          label: company.nome,
+          value: company.idEmpresa,
+        })),
+      );
+      console.log(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const sendPreRegister = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const fd = new FormData(event.currentTarget);
+    const email = fd.get("email-input");
+    console.log(email, companySelect);
+
+    try {
+      const res = await api.post("/auth/pre-register", {
+        login: email,
+        role: "USER",
+        idEmpresa: companySelect,
+      });
+      console.log(res);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <>
@@ -32,7 +75,7 @@ export default function PreRegister() {
             <h2 className="text-2xl font-bold">Pré Cadastro</h2>
             <p className="opacity-60">Cadastre o email da empresa</p>
           </div>
-          <form className="items-center space-y-4">
+          <form className="items-center space-y-4" onSubmit={sendPreRegister}>
             <div className="grid gap-2">
               <label htmlFor="email-input" className="font-bold">
                 E-mail:
@@ -48,17 +91,13 @@ export default function PreRegister() {
               <label htmlFor="select-company" className="font-bold">
                 Empresa:
               </label>
-              <select
-                name="select-company"
+              <CustomSelect
                 id="select-company"
-                className="border border-gray-300 bg-white rounded-lg p-2 cursor-pointer shadow-md focus:scale-105 transition-all duration-100"
-              >
-                <option value="" className="rounded">
-                  Selecione a empresa
-                </option>
-                <option value="">Casa das Alianças</option>
-                <option value="">Suissa</option>
-              </select>
+                label={companySelect}
+                onChange={setCompanySelect}
+                options={companies}
+                value={companySelect}
+              />
             </div>
             <button
               type="submit"
