@@ -7,6 +7,20 @@ export function parseText(text: string | undefined) {
   return text;
 }
 
+export function parseCnpj(cnpj: string | undefined) {
+  if (!cnpj) return cnpj;
+
+  cnpj = cnpj.replace(/\D/g, "");
+
+  if (cnpj.length !== 14) {
+    return cnpj;
+  }
+
+  return cnpj.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+    "$1.$2.$3/$4-$5",
+  );
+}
 export const formatCPF = (value: string) => {
   value = value.replace(/\D/g, ""); // Remove tudo que não é número
   value = value.replace(/^(\d{3})(\d)/, "$1.$2");

@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 
 interface StatsProps {
   label: string;
-  value: number;
+  value: number | undefined;
   icon: LucideIcon;
   color: string;
 }
