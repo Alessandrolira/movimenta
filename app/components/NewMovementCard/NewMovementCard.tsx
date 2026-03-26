@@ -11,7 +11,10 @@ interface NewMovementProps {
   onClick: () => void;
 }
 
-export default function NewMovementCard({ onClick, companies }: NewMovementProps) {
+export default function NewMovementCard({
+  onClick,
+  companies,
+}: NewMovementProps) {
   const [movementSelect, setMovementSelect] = useState("Tipo de Movimentação");
   const [companySelect, setCompanySelect] = useState("Seleciona a empresa");
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryTypes[]>([]);
@@ -54,14 +57,37 @@ export default function NewMovementCard({ onClick, companies }: NewMovementProps
     setBeneficiaries(newBenef);
   };
 
-  const sendMovement = () => {
-    // Lógica para enviar a movimentação
-    alert("Movimentação enviada!");
-    setBeneficiaries([]);
-    setMovementSelect("Tipo de Movimentação");
-    setCompanySelect("Seleciona a empresa");
-    onClick();
-  }
+  const sendMovement = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const fd = new FormData(event.currentTarget);
+    const idEmpresa = fd.get("name-company");
+    const tipoMovimentacao = fd.get("mvm-btn");
+    const descritivo = fd.get("obs");
+    const beneficiarios = beneficiaries.map((benef) => ({
+      nome: benef.nome,
+      cpf: benef.cpf,
+      dataNascimento: benef.dataNascimento,
+      endereco: {
+        logradouro: benef.endereco.logradouro,
+        numero: benef.endereco.numero,
+        cep: benef.endereco.cep,
+        bairro: benef.endereco.bairro,
+        cidade: benef.endereco.cidade,
+        estado: benef.endereco.estado,
+        complemento: benef.endereco.complemento,
+      },
+      dependencia: benef.dependencia,
+      dadosComplementares: {
+        documentosBeneficiario:
+          benef.dadosComplementares.documentosBeneficiario,
+        documentoContratacao: benef.dadosComplementares.documentoContratacao,
+      },
+      nomeTitular: benef.nomeTitular,
+      plano: benef.plano,
+      tipo: benef.tipo,
+    }));
+  };
 
   const options = [
     {
@@ -82,7 +108,6 @@ export default function NewMovementCard({ onClick, companies }: NewMovementProps
     },
   ];
 
-
   return (
     <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
       <div className="bg-(--bg-default) text-(--black) rounded-lg md:min-w-3/4">
@@ -92,7 +117,7 @@ export default function NewMovementCard({ onClick, companies }: NewMovementProps
             <X />
           </button>
         </div>
-        <form className="p-8 space-y-6">
+        <form className="p-8 space-y-6" onSubmit={sendMovement}>
           <div className="grid gap-2 md:grid-cols-3 md:gap-8">
             <div className="grid gap-2">
               <Label htmlFor="mvm-btn">Tipo de Movimentação</Label>
@@ -146,7 +171,10 @@ export default function NewMovementCard({ onClick, companies }: NewMovementProps
           {beneficiaries.length > 0 && (
             <>
               {beneficiaries.map((benef, index) => (
-                <div key={index} className="space-y-4 bg-white/60 rounded-lg border border-gray-300 p-4 inset-shadow-sm/20">
+                <div
+                  key={index}
+                  className="space-y-4 bg-white/60 rounded-lg border border-gray-300 p-4 inset-shadow-sm/20"
+                >
                   <div className="font-bold flex justify-between">
                     <p>Beneficiário {index + 1}</p>
                     <button
@@ -166,7 +194,6 @@ export default function NewMovementCard({ onClick, companies }: NewMovementProps
               ))}
               <div className="space-y-2 md:space-y-0 md:flex gap-2 justify-end">
                 <button
-                  onClick={sendMovement}
                   type="button"
                   className="bg-(--green-btn) border border-green-400 text-(--branco) text-lg px-2 rounded-md w-full md:w-32 hover:text-(--branco) transition-all duration-100 active:inset-shadow-green-900 active:inset-shadow-sm/60"
                 >

@@ -31,6 +31,7 @@ export default function Page() {
           value: company.idEmpresa,
         })),
       );
+      console.log(res.data)
     } catch (err) {
       console.error(err);
     }
@@ -51,6 +52,10 @@ export default function Page() {
     getMoviments();
     getCompanies();
   }, [])
+
+  async function sendMovement(event: React.FormEvent<HTMLFormElement>) {
+
+  }
 
   return (
     <>
