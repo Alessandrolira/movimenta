@@ -5,10 +5,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
 import { setAuthCookie } from "@/services/cookies";
+import { useTransition } from "react";
 
 export default function Login() {
   const router = useRouter();
-
+  const [isPending, startTransition] = useTransition();
 
   const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +27,9 @@ export default function Login() {
     if (res.status == 200) {
       await setAuthCookie(data.data.token);
       console.log("Redirecionando...");
-      router.push("/dashboard");
+      startTransition(() => {
+        router.push("/dashboard");
+      });
     }
   };
 
@@ -81,9 +84,16 @@ export default function Login() {
             </div>
             <button
               type="submit"
+              disabled={isPending}
               className="bg-(--azul) text-white w-full rounded-lg p-2 flex items-center justify-center gap-4 cursor-pointer transtion-all duration-100 active:scale-95"
             >
-              Entrar <BsDoorOpen />
+              {isPending ? (
+                "Carregando"
+              ) : (
+                <>
+                  Entrar <BsDoorOpen />
+                </>
+              )}
             </button>
           </form>
           <p className="opacity-60">

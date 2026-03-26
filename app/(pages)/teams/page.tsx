@@ -1,6 +1,7 @@
 "use client";
 
 import { TeamCard } from "@/app/components/TeamCard/TeamCard";
+import Loading from "@/app/components/ui/Loading/LoadingUI";
 import { api } from "@/services/api";
 import { useEffect, useState } from "react";
 
@@ -14,8 +15,11 @@ export default function Page() {
   async function getEquipes() {
     try {
       const res = await api.get("/equipes");
-      setTeams(res.data);
-      console.log(res.data);
+      if (res.status === 200) {
+        setTeams(res.data);
+        console.log(res.data);
+
+      }
     } catch (err) {
       console.error(err);
     }
