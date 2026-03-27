@@ -9,7 +9,6 @@ import { setAuthCookie } from "@/services/cookies";
 export default function Login() {
   const router = useRouter();
 
-
   const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 

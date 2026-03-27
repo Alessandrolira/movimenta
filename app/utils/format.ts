@@ -1,15 +1,11 @@
-export function parseText(text: string | undefined) {
-  if (!text) return text;
-
+export function parseText(text: string) {
   if (text.length > 16) {
     return text.substring(0, 16) + "...";
   }
   return text;
 }
 
-export function parseCnpj(cnpj: string | undefined) {
-  if (!cnpj) return cnpj;
-
+export function parseCnpj(cnpj: string) {
   cnpj = cnpj.replace(/\D/g, "");
 
   if (cnpj.length !== 14) {
