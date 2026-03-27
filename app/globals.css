@@ -55,7 +55,6 @@ select {
 }
 
 .load {
-  animation: load 0.2s ease-in-out infinite;
-  animation-direction: alternate;
-  animation-delay: calc(var(--i) * 0.05s);
+  animation: load 0.5s ease-in-out infinite alternate-reverse;
+  animation-delay: calc(var(--i) * 0.002s);
 }
