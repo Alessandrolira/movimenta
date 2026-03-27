@@ -1,4 +1,4 @@
-import { BeneficiaryTypes } from "@/app/types/Beneficiary";
+import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
 
 export type MovementTypes = {
   id: string;

@@ -3,7 +3,7 @@
 import { Input } from "@/app/components/ui/Input/Input";
 import { Label } from "@/app/components/ui/Label/Label";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
-import { BeneficiaryTypes } from "@/app/types/Beneficiary";
+import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
 import { formatCEP, formatCPF } from "@/app/utils/format";
 import { useState } from "react";
 
