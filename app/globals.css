@@ -44,3 +44,17 @@ select {
 .gray-icon {
   color: var(--gray-icon);
 }
+
+@keyframes load {
+  from {
+    transform: scale(0.3);
+  }
+  to {
+    transform: scale(2.5);
+  }
+}
+
+.load {
+  animation: load 0.5s ease-in-out infinite alternate-reverse;
+  animation-delay: calc(var(--i) * 0.002s);
+}
