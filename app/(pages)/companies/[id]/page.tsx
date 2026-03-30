@@ -4,41 +4,86 @@ import { CompanyTypes } from "@/app/types/CompanyTypes";
 import { parseCnpj } from "@/app/utils/format";
 import { api } from "@/services/api";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Clock, Files, Layers, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Building2,
+  Clock,
+  Files,
+  Layers,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
 import { DadosGeraisType } from "@/app/types/DadosGeraisType";
+import { IconType } from "react-icons";
+import { GiHealthNormal } from "react-icons/gi";
+import { FaTooth } from "react-icons/fa";
+import Link from "next/link";
+import { FaUserPlus } from "react-icons/fa";
+import { VariacaoVidasType } from "@/app/types/VariacaoVidasType";
 
 export default function Page() {
   const params = useParams();
-  const idEmpresa = params.id;
+  const idEmpresa = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [company, setCompany] = useState<CompanyTypes>();
   const [dadosGerais, setDadosGerais] = useState<DadosGeraisType>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [dadosGraficos, setDadosGraficos] = useState<VariacaoVidasType[]>([]);
+
+  interface modalideConfigProps {
+    value: IconType;
+    className: string;
+    badgeClass: string;
+    label: string;
+  }
+
+  async function getDadosGerais() {
+    try {
+      const res = await api.get(`/empresas/dadosGerais/${idEmpresa}`);
+      console.log(res);
+      setDadosGerais(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function getCompanies() {
+    try {
+      const res = await api.get(`/empresas/${idEmpresa}`);
+      console.log(res);
+      setCompany(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function getDadosGraficos() {
+    try {
+      const res = await api.get(`/movimentacao/variacaoVidas/${idEmpresa}`);
+      console.log(res);
+      console.log(res.data);
+      setDadosGraficos(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   useEffect(() => {
-    async function getDadosGerais() {
+    async function loadPageData() {
       try {
-        const res = await api.get(`/empresas/dadosGerais/${idEmpresa}`);
-        console.log(res);
-        setDadosGerais(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    getDadosGerais();
-
-    async function getCompanies() {
-      try {
-        const res = await api.get(`/empresas/${idEmpresa}`);
-        console.log(res);
-        setCompany(res.data);
-      } catch (err) {
-        console.error(err);
+        setIsLoading(true);
+        await Promise.all([
+          getDadosGerais(),
+          getCompanies(),
+          getDadosGraficos(),
+        ]);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    getCompanies();
+    loadPageData();
   }, []);
 
   const stats = [
@@ -68,13 +113,141 @@ export default function Page() {
     },
   ];
 
+  const modalidadeIcon: Record<
+    CompanyTypes["modalidade"],
+    modalideConfigProps
+  > = {
+    SAUDE: {
+      value: GiHealthNormal,
+      className: "text-red-500",
+      badgeClass: "bg-red-50 text-red-700 border-red-100",
+      label: "Saúde",
+    },
+    DENTAL: {
+      value: FaTooth,
+      className: "text-blue-500",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-100",
+      label: "Dental",
+    },
+  };
+
+  const modalidadeConfig =
+    company && modalidadeIcon[company.modalidade]
+      ? modalidadeIcon[company.modalidade]
+      : {
+          value: Building2,
+          className: "text-gray-500",
+          badgeClass: "bg-gray-100 text-gray-700 border-gray-200",
+          label: company?.modalidade || "Não informado",
+        };
+
+  const ModalidadeIcon = modalidadeConfig.value;
+
+  const barChartData = useMemo(() => {
+    const historicoPorDia = dadosGraficos
+      .map((item) => ({
+        date: new Date(item.data),
+        value: Number(item.quantidadeVidas),
+      }))
+      .filter(
+        (item) =>
+          !Number.isNaN(item.date.getTime()) &&
+          Number.isFinite(item.value) &&
+          item.value > 0,
+      )
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .reduce(
+        (acc, item) => {
+          const label = item.date.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+          });
+
+          acc.set(label, item.value);
+          return acc;
+        },
+        new Map<string, number>(),
+      );
+
+    const firstBar = {
+      label: "Inicial",
+      value: company?.qtdVidasAtivas ?? 0,
+      isInitial: true,
+    };
+
+    const historico = Array.from(historicoPorDia.entries()).map(
+      ([label, value]) => ({
+        label,
+        value,
+        isInitial: false,
+      }),
+    );
+
+    const series = [firstBar, ...historico];
+    const maxValue = Math.max(...series.map((item) => item.value), 1);
+
+    return { series, maxValue };
+  }, [dadosGraficos, company?.qtdVidasAtivas]);
+
   return (
-    <div className="space-y-6 p-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">{company?.nome}</h1>
-        <p className="opacity-60">{parseCnpj(company?.cnpj)}</p>
+    <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-md sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold wrap-break-word">
+                {company?.nome || "Empresa"}
+              </h1>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${modalidadeConfig.badgeClass}`}
+              >
+                <ModalidadeIcon
+                  className={`text-base ${modalidadeConfig.className}`}
+                />
+                {modalidadeConfig.label}
+              </span>
+            </div>
+
+            <p className="opacity-60 text-sm sm:text-base">
+              {parseCnpj(company?.cnpj || "")}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg bg-(--light-gray) px-3 py-2">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Operadora
+                </p>
+                <p className="font-semibold wrap-break-word">
+                  {company?.operadora || "Não informado"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-(--light-gray) px-3 py-2">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Equipe responsável
+                </p>
+                <p className="font-semibold wrap-break-word">
+                  {company?.nomeEquipeResponsavel || "Não informado"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-(--light-gray) px-4 py-3 min-w-52">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
+              Vidas ativas
+            </p>
+            <p className="text-3xl font-bold text-(--azul)">
+              {company?.qtdVidasAtivas ?? 0}
+            </p>
+            <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+              <Users className="h-4 w-4 text-(--blue-icon)" />
+              <span>Total de beneficiarios ativos</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, i) => (
           <StatCard
             key={i}
@@ -84,6 +257,126 @@ export default function Page() {
             color={stat.color}
           />
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-md p-4 sm:p-6 space-y-4 lg:col-span-1 h-fit">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-2xl font-semibold tracking-wide">Logins</p>
+                <p className="text-sm text-gray-500">
+                  {company?.acessos?.length || 0} acesso(s) cadastrados
+                </p>
+              </div>
+              <Link
+                href={`/pre-register?idEmpresa=${idEmpresa}`}
+                className="bg-(--azul) hover:bg-(--blue-icon) text-white rounded-lg py-2 px-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-100 active:scale-95 w-full sm:w-auto text-sm whitespace-nowrap"
+              >
+                Adicionar acesso
+                <FaUserPlus />
+              </Link>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <p className="text-center text-lg italic opacity-60 py-6">
+              Carregando informações...
+            </p>
+          ) : company?.acessos?.length ? (
+            <div className="max-h-64 overflow-y-auto pr-1">
+              <ul className="grid gap-2">
+                {company.acessos.map((acesso: string, index) => (
+                  <li
+                    key={index}
+                    className="rounded-md border border-gray-200 bg-(--light-gray) px-3 py-2 text-sm break-all"
+                  >
+                    {acesso}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-center text-lg italic opacity-60 py-6">
+              Nenhum login cadastrado para esta empresa.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-md p-4 sm:p-6 space-y-4 lg:col-span-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-2xl font-semibold tracking-wide">
+                Evolucao de vidas
+              </p>
+              <p className="text-sm text-gray-500">
+                A primeira coluna mostra o numero inicial de vidas da empresa.
+              </p>
+            </div>
+            <div className="text-sm rounded-lg border border-gray-200 bg-(--light-gray) px-3 py-2">
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                Ultimo valor
+              </p>
+              <p className="font-semibold">
+                {barChartData.series[barChartData.series.length - 1]?.value}{" "}
+                vidas
+              </p>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <p className="text-center text-lg italic opacity-60 py-6">
+              Carregando grafico...
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="h-64 rounded-xl border border-gray-200 bg-(--light-gray) p-3 overflow-x-auto">
+                <div className="h-full min-w-max flex items-end gap-3">
+                  {barChartData.series.map((item, index) => {
+                    const heightPercent =
+                      (item.value / barChartData.maxValue) * 100;
+
+                    return (
+                      <div
+                        key={`${item.label}-${index}`}
+                        className="w-16 h-full flex flex-col justify-end"
+                      >
+                        <div className="flex-1 flex items-end">
+                          <div
+                            className={`w-full rounded-t-md transition-all duration-200 ${
+                              item.isInitial
+                                ? "bg-(--azul)"
+                                : "bg-(--blue-icon)"
+                            }`}
+                            style={{ height: `${Math.max(heightPercent, 4)}%` }}
+                            title={`${item.label}: ${item.value} vidas`}
+                          />
+                        </div>
+                        <p className="text-xs text-center text-gray-600 mt-2 truncate">
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-center font-semibold text-(--black)">
+                          {item.value}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs text-gray-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-(--azul)" />
+                  Valor inicial
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-(--blue-icon)" />
+                  Historico
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

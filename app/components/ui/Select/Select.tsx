@@ -49,20 +49,22 @@ export const CustomSelect = ({
         id={id}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full border border-gray-200 shadow-sm rounded-xl flex justify-between items-center px-4 py-2 hover:bg-gray-50 focus:scale-102 transition-all bg-white"
+        className="h-10 w-full border border-gray-200 shadow-sm rounded-xl flex justify-between items-center px-4 hover:bg-gray-50 focus:scale-102 transition-all bg-white"
       >
-        <span className={selectedOption ? "text-black" : "text-gray-500"}>
+        <span
+          className={`block min-w-0 flex-1 truncate text-left ${selectedOption ? "text-black" : "text-gray-500"}`}
+        >
           {selectedOption ? selectedOption.label : label}
         </span>
         <ChevronDown
-          className={`opacity-60 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`ml-2 shrink-0 opacity-60 transition-transform ${isOpen ? "rotate-180" : ""}`}
           size={20}
         />
       </button>
 
       {/* A Lista (Dropdown) */}
       {isOpen && (
-        <ul className="absolute z-10 w-full mt-2 border border-gray-200 shadow-lg rounded-lg bg-white shadow-lg py-1 max-h-60 overflow-auto">
+        <ul className="absolute z-10 w-full mt-2 border border-gray-200 shadow-lg rounded-lg bg-white py-1 max-h-60 overflow-auto">
           {options.map((option) => (
             <li
               key={option.value}

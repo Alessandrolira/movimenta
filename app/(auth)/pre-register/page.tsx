@@ -5,16 +5,23 @@ import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { verifyConnected } from "@/app/utils/verifyConnected";
 import { api } from "@/services/api";
 import Image from "next/image";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function PreRegister() {
+  const idEmpresa = useSearchParams().get("idEmpresa");
+
   const [companies, setCompanies] = useState<
     { label: string; value: string }[]
   >([]);
   const [companySelect, setCompanySelect] = useState("Seleciona a empresa");
-  console.log(companySelect)
+  console.log(companySelect);
+
   useEffect(() => {
     verifyConnected(window.location.href);
+    if (idEmpresa) {
+      setCompanySelect(idEmpresa);
+    }
     getcompanies();
   }, []);
 
