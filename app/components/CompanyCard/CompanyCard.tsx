@@ -95,7 +95,7 @@ export const CompanyCard = ({
               {operadora}
             </p>
           </div>
-          <div className="flex items-start gap-2 rounded-lg bg-(--light-gray) px-3 py-2">
+          <div className="flex items-start gap-2 rounded-lg bg-(--light-gray) px-3 py-2 border border-gray-200 inset-shadow-sm">
             <UsersRound
               className="mt-0.5 h-4 w-4 shrink-0 text-(--blue-icon)"
               aria-hidden

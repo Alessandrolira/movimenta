@@ -4,7 +4,7 @@ import { Input } from "@/app/components/ui/Input/Input";
 import { useState } from "react";
 import Beneficiary from "@/app/components/Beneficiary/Beneficiary";
 import { Label } from "../ui/Label/Label";
-import { BeneficiaryTypes } from "@/app/types/Beneficiary";
+import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
 
 interface NewMovementProps {
   companies: { label: string; value: string }[];

@@ -8,6 +8,7 @@ import { Building2, IdCard, ShieldCheck, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { parseCnpj } from "@/app/utils/format";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
+import { Input } from "@/app/components/ui/Input/Input";
 
 export default function Page() {
   const [companies, setCompanies] = useState<CompanyTypes[]>([]);
@@ -134,11 +135,12 @@ export default function Page() {
             Lista de empresas
           </h3>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-            <input
+            <Input
               value={search}
+              type="text"
+              id="search-comp"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por nome ou CNPJ"
-              className="w-full md:max-w-xs border border-gray-300 rounded-lg bg-white p-2 shadow-md transition-all duration-100 focus:ring-2 focus:ring-(--azul) focus:outline-none"
             />
             <div className="flex flex-col gap-2 sm:flex-row sm:gap-3 w-full md:w-auto">
               <CustomSelect
