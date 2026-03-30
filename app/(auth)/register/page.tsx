@@ -18,8 +18,6 @@ export default function PreRegister() {
     const res = await api.post(`/auth/ativar?token=${validationToken}`, {
       password: password,
     });
-    const data = res;
-    console.log(data);
     if (res.status == 200) {
       router.push("/login");
     }
