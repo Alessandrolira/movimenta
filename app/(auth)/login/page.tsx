@@ -21,10 +21,8 @@ export default function Login() {
       password: password,
     });
     const data = res;
-    console.log(data);
     if (res.status == 200) {
       await setAuthCookie(data.data.token);
-      console.log("Redirecionando...");
       router.push("/dashboard");
     }
   };

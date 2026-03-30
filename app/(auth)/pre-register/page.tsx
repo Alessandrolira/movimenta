@@ -15,7 +15,6 @@ export default function PreRegister() {
     { label: string; value: string }[]
   >([]);
   const [companySelect, setCompanySelect] = useState("Seleciona a empresa");
-  console.log(companySelect);
 
   useEffect(() => {
     verifyConnected(window.location.href);
@@ -34,7 +33,6 @@ export default function PreRegister() {
           value: company.idEmpresa,
         })),
       );
-      console.log(res.data);
     } catch (err) {
       console.error(err);
     }
@@ -44,15 +42,13 @@ export default function PreRegister() {
     event.preventDefault();
     const fd = new FormData(event.currentTarget);
     const email = fd.get("email-input");
-    console.log(email, companySelect);
 
     try {
-      const res = await api.post("/auth/pre-register", {
+      await api.post("/auth/pre-register", {
         login: email,
         role: "USER",
         idEmpresa: companySelect,
       });
-      console.log(res);
     } catch (err) {
       console.error(err);
     }

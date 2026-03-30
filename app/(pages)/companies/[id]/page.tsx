@@ -5,14 +5,7 @@ import { parseCnpj } from "@/app/utils/format";
 import { api } from "@/services/api";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Building2,
-  Clock,
-  Files,
-  Layers,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { Building2, Clock, Files, Layers, Users } from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
 import { DadosGeraisType } from "@/app/types/DadosGeraisType";
 import { IconType } from "react-icons";
@@ -41,7 +34,6 @@ export default function Page() {
   async function getDadosGerais() {
     try {
       const res = await api.get(`/empresas/dadosGerais/${idEmpresa}`);
-      console.log(res);
       setDadosGerais(res.data);
     } catch (err) {
       console.error(err);
@@ -51,7 +43,6 @@ export default function Page() {
   async function getCompanies() {
     try {
       const res = await api.get(`/empresas/${idEmpresa}`);
-      console.log(res);
       setCompany(res.data);
     } catch (err) {
       console.error(err);
@@ -61,8 +52,6 @@ export default function Page() {
   async function getDadosGraficos() {
     try {
       const res = await api.get(`/movimentacao/variacaoVidas/${idEmpresa}`);
-      console.log(res);
-      console.log(res.data);
       setDadosGraficos(res.data);
     } catch (err) {
       console.error(err);
@@ -85,6 +74,8 @@ export default function Page() {
 
     loadPageData();
   }, []);
+
+  console.log("Dados para gráfico de variação de vidas:", dadosGraficos);
 
   const stats = [
     {
@@ -156,18 +147,15 @@ export default function Page() {
           item.value > 0,
       )
       .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .reduce(
-        (acc, item) => {
-          const label = item.date.toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-          });
+      .reduce((acc, item) => {
+        const label = item.date.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        });
 
-          acc.set(label, item.value);
-          return acc;
-        },
-        new Map<string, number>(),
-      );
+        acc.set(label, item.value);
+        return acc;
+      }, new Map<string, number>());
 
     const firstBar = {
       label: "Inicial",

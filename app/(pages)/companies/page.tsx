@@ -23,7 +23,6 @@ export default function Page() {
       try {
         setIsLoading(true);
         const res = await api.get("/empresas");
-        console.log(res);
         setCompanies(res.data);
       } catch (err) {
         console.error(err);
@@ -33,8 +32,6 @@ export default function Page() {
     }
     getCompanies();
   }, []);
-
-  console.log(companies);
 
   const stats = useMemo(() => {
     const { totalVidas, vidasSaude, vidasOdonto } = companies.reduce(

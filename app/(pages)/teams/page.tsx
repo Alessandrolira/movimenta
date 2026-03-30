@@ -14,7 +14,6 @@ export default function Page() {
     try {
       const res = await api.get("/equipes");
       setTeams(res.data);
-      console.log(res.data);
     } catch (err) {
       console.error(err);
     }
