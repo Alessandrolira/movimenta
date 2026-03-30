@@ -13,7 +13,9 @@ export default function Page() {
   const [companies, setCompanies] = useState<CompanyTypes[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [modalidadeFilter, setModalidadeFilter] = useState<"" | "SAUDE" | "DENTAL">("");
+  const [modalidadeFilter, setModalidadeFilter] = useState<
+    "" | "SAUDE" | "DENTAL"
+  >("");
   const [operadoraFilter, setOperadoraFilter] = useState<string>("");
 
   useEffect(() => {
@@ -31,6 +33,8 @@ export default function Page() {
     }
     getCompanies();
   }, []);
+
+  console.log(companies);
 
   const stats = useMemo(() => {
     const { totalVidas, vidasSaude, vidasOdonto } = companies.reduce(
