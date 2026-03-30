@@ -53,9 +53,6 @@ export default function Page() {
     getCompanies();
   }, [])
 
-  async function sendMovement(event: React.FormEvent<HTMLFormElement>) {
-
-  }
 
   return (
     <>

@@ -5,6 +5,8 @@ import { useState } from "react";
 import Beneficiary from "@/app/components/Beneficiary/Beneficiary";
 import { Label } from "../ui/Label/Label";
 import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
+import { api } from "@/services/api";
+import SendMovement from "@/services/sendMovement";
 
 interface NewMovementProps {
   companies: { label: string; value: string }[];
@@ -57,56 +59,18 @@ export default function NewMovementCard({
     setBeneficiaries(newBenef);
   };
 
-  const sendMovement = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleMovement = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const fd = new FormData(event.currentTarget);
-    const idEmpresa = fd.get("name-company");
-    const tipoMovimentacao = fd.get("mvm-btn");
-    const descritivo = fd.get("obs");
-    const beneficiarios = beneficiaries.map((benef) => ({
-      nome: benef.nome,
-      cpf: benef.cpf,
-      dataNascimento: benef.dataNascimento,
-      endereco: {
-        logradouro: benef.endereco.logradouro,
-        numero: benef.endereco.numero,
-        cep: benef.endereco.cep,
-        bairro: benef.endereco.bairro,
-        cidade: benef.endereco.cidade,
-        estado: benef.endereco.estado,
-        complemento: benef.endereco.complemento,
-      },
-      dependencia: benef.dependencia,
-      dadosComplementares: {
-        documentosBeneficiario:
-          benef.dadosComplementares.documentosBeneficiario,
-        documentoContratacao: benef.dadosComplementares.documentoContratacao,
-      },
-      nomeTitular: benef.nomeTitular,
-      plano: benef.plano,
-      tipo: benef.tipo,
-    }));
+    const idEmpresa = fd.get("name-company") as string;
+    const descritivo = fd.get("obs") as string;
+    SendMovement(beneficiaries, idEmpresa, descritivo);
   };
 
-  const options = [
-    {
-      label: "Inclusão",
-      value: "inclusao",
-    },
-    {
-      label: "Exclusão",
-      value: "exclusao",
-    },
-    {
-      label: "Alteração Cadastral",
-      value: "alteracao",
-    },
-    {
-      label: "2° Via da Carteirinha",
-      value: "segunda_via",
-    },
-  ];
+  console.log("BENEFICIÁRIOS", beneficiaries);
+
+
 
   return (
     <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
@@ -117,18 +81,8 @@ export default function NewMovementCard({
             <X />
           </button>
         </div>
-        <form className="p-8 space-y-6" onSubmit={sendMovement}>
+        <form className="p-8 space-y-6" onSubmit={handleMovement}>
           <div className="grid gap-2 md:grid-cols-3 md:gap-8">
-            <div className="grid gap-2">
-              <Label htmlFor="mvm-btn">Tipo de Movimentação</Label>
-              <CustomSelect
-                id="mvm-btn"
-                label={movementSelect}
-                onChange={setMovementSelect}
-                options={options}
-                value={movementSelect}
-              />
-            </div>
             <div className="grid gap-2">
               <Label htmlFor="name-company">Empresa</Label>
               <CustomSelect
@@ -194,7 +148,7 @@ export default function NewMovementCard({
               ))}
               <div className="space-y-2 md:space-y-0 md:flex gap-2 justify-end">
                 <button
-                  type="button"
+                  type="submit"
                   className="bg-(--green-btn) border border-green-400 text-(--branco) text-lg px-2 rounded-md w-full md:w-32 hover:text-(--branco) transition-all duration-100 active:inset-shadow-green-900 active:inset-shadow-sm/60"
                 >
                   Enviar

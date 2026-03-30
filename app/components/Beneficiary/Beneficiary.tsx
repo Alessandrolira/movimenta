@@ -16,23 +16,43 @@ export default function Beneficiary({ data, onChange }: BeneficiaryProps) {
   const [dependencySelected, setDependencySelected] = useState(
     "Selecione a dependência",
   );
+  const [movementTypeSelected, setMovementTypeSelected] = useState("Seleciona a movimentação")
 
   const dependencies = [
     {
       label: "Titular",
-      value: "titular",
+      value: "TITULAR",
     },
     {
       label: "Cônjuge",
-      value: "conjuge",
+      value: "CONJUGE",
     },
     {
       label: "Filho",
-      value: "filho",
+      value: "FILLHO",
     },
     {
       label: "Agregado",
-      value: "agregado",
+      value: "AGREGADO",
+    },
+  ];
+
+    const movements = [
+    {
+      label: "Inclusão",
+      value: "INCLUSAO",
+    },
+    {
+      label: "Exclusão",
+      value: "EXCLUSAO",
+    },
+    {
+      label: "Alteração Cadastral",
+      value: "ALTERACAO_DE_DADOS_CADASTRAIS",
+    },
+    {
+      label: "2° Via da Carteirinha",
+      value: "SEGUNDA_VIA_CARTEIRINHA",
     },
   ];
 
@@ -54,6 +74,10 @@ export default function Beneficiary({ data, onChange }: BeneficiaryProps) {
           type="text"
           id="name-benf"
         />
+      </div>
+      <div className="space-y-2 md:col-span-2">
+        <Label htmlFor="move-type">Tipo de Movimentação</Label>
+        <CustomSelect id="move-type" label={movementTypeSelected} onChange={(e) => {handleChange("tipo", e); setMovementTypeSelected(e)}} options={movements} value={movementTypeSelected}/>
       </div>
       <div className="space-y-2">
         <Label htmlFor="dt-nasc">Data de Nascimento</Label>
