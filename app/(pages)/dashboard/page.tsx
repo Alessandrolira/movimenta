@@ -31,7 +31,6 @@ export default function Page() {
           value: company.idEmpresa,
         })),
       );
-      console.log(res.data)
     } catch (err) {
       console.error(err);
     }
@@ -40,7 +39,6 @@ export default function Page() {
   async function getMoviments() {
     try {
       const res = await api.get("/movimentacao");
-      console.log(res);
       setMovements(res.data || []);
     } catch (err) {
       console.error(err);

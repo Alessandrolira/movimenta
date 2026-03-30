@@ -1,6 +1,7 @@
 export type AnalistsTypes = {
-    nome: string
-    email: string
-    responsabilidade: "AUXILIAR" | "JUNIOR" | "PLENO" | "SENIOR"
-    idEquipe: string
-}
+  idAnalista: string;
+  nome: string;
+  email: string;
+  responsabilidade: "AUXILIAR" | "JUNIOR" | "PLENO" | "SENIOR";
+  idEquipe: string;
+};
