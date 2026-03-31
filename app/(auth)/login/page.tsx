@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
 import { setAuthCookie } from "@/services/cookies";
 import { useTransition } from "react";
+import Link from "next/link";
 
 export default function Login() {
   const router = useRouter();
@@ -67,7 +68,7 @@ export default function Login() {
                 id="email-input"
                 name="email-input"
                 type="email"
-                className="border border-gray-300 rounded-lg bg-white p-2 cursor-pointer shadow-md focus:scale-105 transition-all duration-100"
+                className="border border-gray-300 rounded-lg bg-white p-2 shadow-md focus:scale-105 transition-all duration-100"
               />
             </div>
             <div className="grid gap-2">
@@ -78,7 +79,7 @@ export default function Login() {
                 id="pwd-input"
                 name="pwd-input"
                 type="password"
-                className="border border-gray-300 rounded-lg p-2 bg-white cursor-pointer shadow-md focus:scale-105 transition-all duration-100"
+                className="border border-gray-300 rounded-lg p-2 bg-white shadow-md focus:scale-105 transition-all duration-100"
               />
             </div>
             <button
@@ -95,7 +96,17 @@ export default function Login() {
               )}
             </button>
           </form>
-          <p className="opacity-60">
+          <div className="flex items-center gap-3 text-sm text-(--cinza)">
+            <div className="flex-1 h-px bg-gray-300" />
+            <Link
+              href={"/forget-password"}
+              className="whitespace-nowrap text-(--azul) font-medium hover:text-(--azul-escuro) hover:underline underline-offset-4 transition-colors duration-150"
+            >
+              Esqueceu sua senha?
+            </Link>
+            <div className="flex-1 h-px bg-gray-300" />
+          </div>
+          <p className="opacity-60 text-center">
             Sem acesso? Entre em contato com a sua corretora.
           </p>
         </div>

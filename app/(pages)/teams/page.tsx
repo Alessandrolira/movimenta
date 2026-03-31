@@ -2,7 +2,6 @@
 
 import { TeamCard } from "@/app/components/TeamCard/TeamCard";
 import { Input } from "@/app/components/ui/Input/Input";
-import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { TeamsTypes } from "@/app/types/TeamsTypes";
 import { api } from "@/services/api";
 import { useEffect, useState } from "react";
