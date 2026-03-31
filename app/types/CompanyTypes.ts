@@ -1,3 +1,8 @@
+export type AcessoType = {
+  email: string;
+  status: string;
+};
+
 export type CompanyTypes = {
   idEmpresa: string;
   nome: string;
@@ -5,6 +10,6 @@ export type CompanyTypes = {
   modalidade: string;
   operadora: string;
   qtdVidasAtivas: number;
-  acessos: [string];
+  acessos: AcessoType[];
   nomeEquipeResponsavel: string;
 };

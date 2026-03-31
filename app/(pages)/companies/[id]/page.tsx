@@ -274,14 +274,16 @@ export default function Page() {
           ) : company?.acessos?.length ? (
             <div className="max-h-64 overflow-y-auto pr-1">
               <ul className="grid gap-2">
-                {company.acessos.map((acesso: string, index) => (
-                  <li
-                    key={index}
-                    className="rounded-md border border-gray-200 bg-(--light-gray) px-3 py-2 text-sm break-all"
-                  >
-                    {acesso}
-                  </li>
-                ))}
+                {company.acessos.map(
+                  (acesso: { email: string; status: string }, index) => (
+                    <li
+                      key={index}
+                      className="rounded-md border border-gray-200 bg-(--light-gray) px-3 py-2 text-sm break-all"
+                    >
+                      {acesso.email} - {acesso.status}
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           ) : (

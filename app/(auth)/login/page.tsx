@@ -5,31 +5,35 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
 import { setAuthCookie } from "@/services/cookies";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 
 export default function Login() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
 
   const sendLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError("");
 
     const fd = new FormData(event.currentTarget);
     const email = fd.get("email-input");
     const password = fd.get("pwd-input");
 
-    const res = await api.post("/auth/login", {
-      login: email,
-      password: password,
-    });
-    const data = res;
-    if (res.status == 200) {
-      await setAuthCookie(data.data.token);
-      console.log("Redirecionando...");
-      startTransition(() => {
-        router.push("/dashboard");
+    try {
+      const res = await api.post("/auth/login", {
+        login: email,
+        password: password,
       });
+      if (res.status == 200) {
+        await setAuthCookie(res.data.token);
+        startTransition(() => {
+          router.push("/dashboard");
+        });
+      }
+    } catch {
+      setError("E-mail ou senha incorretos. Verifique suas credenciais.");
     }
   };
 
@@ -82,6 +86,9 @@ export default function Login() {
                 className="border border-gray-300 rounded-lg p-2 bg-white shadow-md focus:scale-105 transition-all duration-100"
               />
             </div>
+            {error && (
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            )}
             <button
               type="submit"
               disabled={isPending}

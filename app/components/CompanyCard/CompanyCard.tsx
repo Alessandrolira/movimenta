@@ -12,7 +12,10 @@ interface CompanyProps {
   cnpj: string;
   modalidade: string;
   operadora: string;
-  acessos: string[];
+  acessos: {
+    email: string;
+    status: string;
+  }[];
   nomeEquipeResponsavel: string;
   qtdVidasAtivas: number;
 }
@@ -60,8 +63,12 @@ export const CompanyCard = ({
   nomeEquipeResponsavel,
   qtdVidasAtivas,
 }: CompanyProps) => {
-  const { Icon, iconClass, badgeClass, label: modalidadeLabel } =
-    getModalidade(modalidade);
+  const {
+    Icon,
+    iconClass,
+    badgeClass,
+    label: modalidadeLabel,
+  } = getModalidade(modalidade);
 
   return (
     <Link
@@ -125,7 +132,7 @@ export const CompanyCard = ({
                     key={index}
                     className="rounded-md border border-gray-100 bg-white px-2.5 py-1.5 text-xs text-gray-700 break-all shadow-sm"
                   >
-                    {acesso}
+                    {acesso.email} - {acesso.status}
                   </li>
                 ))}
               </ul>

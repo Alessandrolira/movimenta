@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { UserCog, TriangleAlert } from "lucide-react";
 
 type TeamStatus = "loading" | "valid" | "invalid";
+type SubmitStatus = "idle" | "success" | "error";
 
 export default function PreRegister() {
   const searchParams = useSearchParams();
@@ -27,6 +28,7 @@ export default function PreRegister() {
   const [teamStatus, setTeamStatus] = useState<TeamStatus>(
     isAnalistaFlow ? "loading" : "valid",
   );
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
 
   useEffect(() => {
     verifyConnected(window.location.href);
@@ -73,7 +75,7 @@ export default function PreRegister() {
       if (isAnalistaFlow) {
         await api.post("/auth/pre-register", {
           login: email,
-          role: "ANALYST",
+          role: "ADMIN",
           idEquipe,
         });
       } else {
@@ -83,8 +85,10 @@ export default function PreRegister() {
           idEmpresa: companySelect,
         });
       }
+      setSubmitStatus("success");
     } catch (err) {
       console.error(err);
+      setSubmitStatus("error");
     }
   };
 
@@ -110,8 +114,10 @@ export default function PreRegister() {
           idEmpresa: companySelect,
         });
       }
+      setSubmitStatus("success");
     } catch (err) {
       console.error(err);
+      setSubmitStatus("error");
     }
   };
 
@@ -246,6 +252,19 @@ export default function PreRegister() {
                   >
                     Cadastrar analista
                   </button>
+
+                  {submitStatus === "success" && (
+                    <p className="text-green-600 text-sm text-center font-medium">
+                      Analista cadastrado com sucesso. O e-mail de ativacao foi
+                      enviado.
+                    </p>
+                  )}
+                  {submitStatus === "error" && (
+                    <p className="text-red-500 text-sm text-center">
+                      Nao foi possivel cadastrar o analista. Verifique os dados
+                      e tente novamente.
+                    </p>
+                  )}
                 </form>
 
                 <p className="opacity-60">
@@ -314,6 +333,19 @@ export default function PreRegister() {
             >
               Cadastrar
             </button>
+
+            {submitStatus === "success" && (
+              <p className="text-green-600 text-sm text-center font-medium">
+                Cadastro realizado com sucesso. O e-mail de ativacao foi
+                enviado.
+              </p>
+            )}
+            {submitStatus === "error" && (
+              <p className="text-red-500 text-sm text-center">
+                Nao foi possivel realizar o cadastro. Verifique os dados e tente
+                novamente.
+              </p>
+            )}
           </form>
           <p className="opacity-60">
             O email pré cadastrado receberá um email para completar o cadastro

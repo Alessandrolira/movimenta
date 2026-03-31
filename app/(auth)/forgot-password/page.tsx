@@ -1,17 +1,13 @@
 "use client";
 import { LogoPositivo } from "@/app/components/Logo/LogoPositivo";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
-type Step = "email" | "code" | "password";
+type Step = "email" | "code" | "password" | "success";
 
 export default function ForgetPassword() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -61,9 +57,7 @@ export default function ForgetPassword() {
 
     try {
       await api.post("/auth/reset-password", { email, code, newPassword });
-      startTransition(() => {
-        router.push("/login");
-      });
+      setStep("success");
     } catch {
       setError("Não foi possível redefinir a senha. Tente novamente.");
     }
@@ -202,13 +196,37 @@ export default function ForgetPassword() {
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <button
                   type="submit"
-                  disabled={isPending}
                   className={buttonClass}
                 >
-                  {isPending ? "Salvando..." : "Redefinir senha"}
+                  Redefinir senha
                 </button>
               </form>
             </>
+          )}
+
+          {step === "success" && (
+            <div className="flex flex-col gap-4 items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                <svg
+                  className="w-7 h-7 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold">Senha redefinida</h2>
+              <p className="opacity-60">
+                Sua senha foi atualizada com sucesso. Agora voce pode entrar com
+                a nova senha.
+              </p>
+            </div>
           )}
 
           <div className="flex items-center gap-3 text-sm text-(--cinza)">
