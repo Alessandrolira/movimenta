@@ -1,3 +1,4 @@
+import { deleteAuthCookie } from "@/services/cookies";
 import { X } from "lucide-react";
 import Link from "next/link";
 
@@ -34,8 +35,8 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
       <div>
         <button
           onClick={() => {
-            // deleteAuthCookie();
-            // window.location.href = "/login";
+            deleteAuthCookie("token");
+            window.location.href = "/login";
           }}
           className="bg-(--red-btn) border border-red-800 w-full text-(--branco) py-2 px-4 rounded-md cursor-pointer hover:text-(--branco) active:inset-shadow-sm/60 active:inset-shadow-red-900 transition-all duration-100"
         >
