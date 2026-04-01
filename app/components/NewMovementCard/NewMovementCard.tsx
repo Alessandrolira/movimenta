@@ -23,6 +23,7 @@ export default function NewMovementCard({
     { vinculo: File | null; pessoais: File[] }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [modalitySelect, setModalitySelect] = useState("Selecione a modalidade");
 
   const addBenef = () => {
     const newBenef: BeneficiaryTypes = {
@@ -66,7 +67,7 @@ export default function NewMovementCard({
   const updateBenefFiles = (
     index: number,
     field: "vinculo" | "pessoais",
-    value: File | null | File[]
+    value: File | null | File[],
   ) => {
     const updated = [...beneficiaryFiles];
     updated[index] = { ...updated[index], [field]: value };
@@ -82,13 +83,20 @@ export default function NewMovementCard({
       const idEmpresa = companySelect;
       const descritivo = fd.get("obs") as string;
       const nomeEmpresa =
-        companies.find((c) => c.value === companySelect)?.label ?? companySelect;
+        companies.find((c) => c.value === companySelect)?.label ??
+        companySelect;
 
       // Passo 1: upload dos arquivos de cada beneficiário
       const uploadedBeneficiaries = await Promise.all(
         beneficiaries.map(async (benef, index) => {
-          const files = beneficiaryFiles[index] ?? { vinculo: null, pessoais: [] };
-          const allFiles: File[] = [...files.pessoais, ...(files.vinculo ? [files.vinculo] : [])];
+          const files = beneficiaryFiles[index] ?? {
+            vinculo: null,
+            pessoais: [],
+          };
+          const allFiles: File[] = [
+            ...files.pessoais,
+            ...(files.vinculo ? [files.vinculo] : []),
+          ];
 
           if (allFiles.length === 0) {
             return benef;
@@ -106,15 +114,15 @@ export default function NewMovementCard({
           const uploadRes = await api.post<string[]>(
             `/api/files/upload?${params.toString()}`,
             uploadForm,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            { headers: { "Content-Type": "multipart/form-data" } },
           );
 
           const raw = uploadRes.data;
           const paths: string[] = Array.isArray(raw)
             ? raw
             : typeof raw === "string"
-            ? [raw]
-            : Object.values(raw as Record<string, string>);
+              ? [raw]
+              : Object.values(raw as Record<string, string>);
 
           const pessoaisCount = files.pessoais.length;
           const documentosBeneficiario = paths.slice(0, pessoaisCount);
@@ -123,9 +131,12 @@ export default function NewMovementCard({
           // Passo 2: injetar caminhos nos dadosComplementares
           return {
             ...benef,
-            dadosComplementares: { documentosBeneficiario, documentoContratacao },
+            dadosComplementares: {
+              documentosBeneficiario,
+              documentoContratacao,
+            },
           };
-        })
+        }),
       );
 
       // Passo 3: enviar movimentação com payload completo
@@ -136,8 +147,6 @@ export default function NewMovementCard({
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
@@ -166,6 +175,19 @@ export default function NewMovementCard({
                 id="obs"
                 type="text"
                 placeholder="Digite aqui sua observação..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="modalidade">Modalidade</Label>
+              <CustomSelect
+                id="modalidade"
+                label={modalitySelect}
+                onChange={setModalitySelect}
+                options={[
+                  { label: "Enfermaria", value: "ENFERMARIA" },
+                  { label: "Apartamento", value: "APARTAMENTO" },
+                ]}
+                value={modalitySelect}
               />
             </div>
           </div>
@@ -210,8 +232,12 @@ export default function NewMovementCard({
                     key={`beneficiary-field-${index}`}
                     data={benef}
                     onChange={(updatedData) => updateBenef(index, updatedData)}
-                    onVinculoChange={(file) => updateBenefFiles(index, "vinculo", file)}
-                    onPessoaisChange={(files) => updateBenefFiles(index, "pessoais", files)}
+                    onVinculoChange={(file) =>
+                      updateBenefFiles(index, "vinculo", file)
+                    }
+                    onPessoaisChange={(files) =>
+                      updateBenefFiles(index, "pessoais", files)
+                    }
                   />
                 </div>
               ))}

@@ -11,6 +11,16 @@ export function parseDate(date: string | number[]): string {
   return parsed.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
+export function resolveMovementStatus(
+  beneficiarios: { status: string }[],
+): "pendente" | "em_analise" | "concluido" {
+  if (beneficiarios.length === 0) return "pendente";
+  const statuses = beneficiarios.map((b) => b.status?.toLowerCase());
+  if (statuses.some((s) => s === "pendente")) return "pendente";
+  if (statuses.every((s) => s === "concluido")) return "concluido";
+  return "em_analise";
+}
+
 export function parseText(text: string) {
   if (text.length > 16) {
     return text.substring(0, 16) + "...";

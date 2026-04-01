@@ -1,8 +1,11 @@
 import { BeneficiaryMovimentsTypes } from "@/app/types/BeneficiaryMovimentsTypes";
-import { parseDate } from "@/app/utils/format";
+import { parseDate, resolveMovementStatus } from "@/app/utils/format";
 import {
+  CheckCircle2,
+  Clock,
   CreditCard,
   RefreshCw,
+  Search,
   UserMinus,
   UserPlus,
   UsersRound,
@@ -89,6 +92,14 @@ function getModalidade(modalidade: string): ModalidadeConfig {
   );
 }
 
+type StatusConfig = { Icon: LucideIcon; label: string; badgeClass: string };
+
+const statusDisplayMap: Record<string, StatusConfig> = {
+  pendente:   { Icon: Clock,        label: "Pendente",   badgeClass: "bg-orange-50 text-orange-700 border-orange-200" },
+  em_analise: { Icon: Search,       label: "Em Análise", badgeClass: "bg-blue-50 text-blue-700 border-blue-200"       },
+  concluido:  { Icon: CheckCircle2, label: "Concluído",  badgeClass: "bg-green-50 text-green-700 border-green-200"    },
+};
+
 function groupByTipo(beneficiarios: BeneficiaryMovimentsTypes[]) {
   return beneficiarios.reduce<Record<string, number>>((acc, b) => {
     const key = b.tipoMovimentacao?.toUpperCase() ?? "OUTROS";
@@ -107,6 +118,7 @@ export const MovementParentCard = ({
 }: MovementParentProps) => {
   const { Icon, iconClass } = getModalidade(modalidade);
   const tipoGroups = groupByTipo(beneficiarios);
+  const { Icon: StatusIcon, label: statusLabel, badgeClass: statusBadgeClass } = statusDisplayMap[resolveMovementStatus(beneficiarios)];
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:border-(--blue-icon) hover:shadow-md active:scale-[0.99]">
@@ -189,19 +201,25 @@ export const MovementParentCard = ({
         </div>
       </div>
 
-      {/* Footer: data */}
-      <div className="flex items-center gap-2 border-t border-gray-100 bg-(--light-gray) px-4 py-3 sm:px-5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-100">
-          <IoPeople className="text-base text-(--blue-icon)" aria-hidden />
-        </span>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-            Data da movimentação
-          </p>
-          <p className="text-sm font-medium tabular-nums text-(--azul)">
-            {parseDate(dataMovimentacao)}
-          </p>
+      {/* Footer: data + status */}
+      <div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-(--light-gray) px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-100">
+            <IoPeople className="text-base text-(--blue-icon)" aria-hidden />
+          </span>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              Data da movimentação
+            </p>
+            <p className="text-sm font-medium tabular-nums text-(--azul)">
+              {parseDate(dataMovimentacao)}
+            </p>
+          </div>
         </div>
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusBadgeClass}`}>
+          <StatusIcon className="h-3.5 w-3.5" aria-hidden />
+          {statusLabel}
+        </span>
       </div>
     </div>
   );

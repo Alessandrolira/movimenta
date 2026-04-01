@@ -106,7 +106,7 @@ export default function Login() {
           <div className="flex items-center gap-3 text-sm text-(--cinza)">
             <div className="flex-1 h-px bg-gray-300" />
             <Link
-              href={"/forget-password"}
+              href={"/forgot-password"}
               className="whitespace-nowrap text-(--azul) font-medium hover:text-(--azul-escuro) hover:underline underline-offset-4 transition-colors duration-150"
             >
               Esqueceu sua senha?
