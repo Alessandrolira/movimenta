@@ -123,7 +123,7 @@ export default function Page() {
   const hasFilters = search || sortOrder || sortDate || filterStatus;
 
   return (
-    <>
+    <div className="relative">
       {toggleNewMovement && (
         <NewMovementCard
           companies={companies}
@@ -253,6 +253,6 @@ export default function Page() {
           </p>
         )}
       </div>
-    </>
+    </div>
   );
 }

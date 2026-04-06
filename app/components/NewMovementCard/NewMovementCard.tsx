@@ -160,7 +160,7 @@ export default function NewMovementCard({
   };
 
   return (
-    <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
+    <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll h-full lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
       <div className="bg-(--bg-default) text-(--black) rounded-lg md:min-w-3/4">
         <div className="flex p-6 border-b border-black/20 justify-between items-center">
           <h2 className="font-bold text-2xl">Nova Movimentação</h2>
@@ -186,19 +186,6 @@ export default function NewMovementCard({
                 id="obs"
                 type="text"
                 placeholder="Digite aqui sua observação..."
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="modalidade">Modalidade</Label>
-              <CustomSelect
-                id="modalidade"
-                label={modalitySelect}
-                onChange={setModalitySelect}
-                options={[
-                  { label: "Saúde", value: "SAUDE" },
-                  { label: "Dental", value: "DENTAL" },
-                ]}
-                value={modalitySelect}
               />
             </div>
           </div>
