@@ -4,7 +4,44 @@ import { MovementTypes } from "@/app/types/MovementTypes";
 import { api } from "@/services/api";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Search, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  RefreshCw,
+  SearchAlert,
+  Search,
+  UserMinus,
+  UserPlus,
+  Users,
+} from "lucide-react";
+
+const statusOptions = [
+  {
+    value: "PENDENTE",
+    key: "pendente",
+    label: "Pendente",
+    Icon: Clock,
+    active: "bg-orange-100 border-orange-400 text-orange-700",
+    hover: "hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600",
+  },
+  {
+    value: "EM_ANALISE",
+    key: "em_analise",
+    label: "Em Análise",
+    Icon: Search,
+    active: "bg-blue-100 border-blue-400 text-blue-700",
+    hover: "hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600",
+  },
+  {
+    value: "CONCLUIDO",
+    key: "concluido",
+    label: "Concluído",
+    Icon: CheckCircle2,
+    active: "bg-green-100 border-green-400 text-green-700",
+    hover: "hover:bg-green-50 hover:border-green-300 hover:text-green-600",
+  },
+];
 import StatCard from "@/app/components/StatCard/StatCard";
 import { parseDate, resolveMovementStatus } from "@/app/utils/format";
 import { GiHealthNormal } from "react-icons/gi";
@@ -20,15 +57,41 @@ const tipoLabel: Record<string, string> = {
 const statusMap: Record<string, { label: string; className: string }> = {
   pendente: {
     label: "Pendente",
-    className: "bg-orange-50 text-orange-700 border-orange-100",
+    className: "bg-orange-50 text-orange-700 border-orange-300",
   },
   em_analise: {
     label: "Em Análise",
-    className: "bg-blue-50 text-blue-700 border-blue-100",
+    className: "bg-blue-50 text-blue-700 border-blue-300",
   },
   concluido: {
     label: "Concluído",
-    className: "bg-green-50 text-green-700 border-green-100",
+    className: "bg-green-50 text-green-700 border-green-300",
+  },
+};
+
+const tipoMap: Record<
+  string,
+  { Icon: React.ElementType; className: string; label: string }
+> = {
+  INCLUSAO: {
+    Icon: UserPlus,
+    className: "bg-green-50 text-(--green-icon) border rounded-lg border-green-200 p-2",
+    label: "Inclusão",
+  },
+  EXCLUSAO: {
+    Icon: UserMinus,
+    className: "text-(--red-icon) bg-red-50 border rounded-lg border-red-200 p-2",
+    label: "Exclusão",
+  },
+  ALTERACAO_DE_DADOS_CADASTRAIS: {
+    Icon: RefreshCw,
+    className: "text-(--blue-icon) bg-blue-50 border rounded-lg border-blue-200 p-2",
+    label: "Alteração Cadastral",
+  },
+  SEGUNDA_VIA_CARTEIRINHA: {
+    Icon: CreditCard,
+    className: "text-purple-500 bg-purple-50 border rounded-lg border-purple-200 p-2",
+    label: "2ª Via Carteirinha",
   },
 };
 
@@ -46,6 +109,27 @@ export default function Page() {
 
   const [movement, setMovement] = useState<MovementTypes | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const handleStatusChange = async (idBeneficiario: string, newStatus: string) => {
+    setUpdatingId(idBeneficiario);
+    try {
+      await api.put(`/movimentacao/alterStatus/${idBeneficiario}`, { status: newStatus });
+      setMovement((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          beneficiariosMovimentacao: prev.beneficiariosMovimentacao.map((b) =>
+            b.idBeneficiario === idBeneficiario ? { ...b, status: newStatus } : b,
+          ),
+        };
+      });
+    } catch (err) {
+      console.error("Erro ao atualizar status:", err);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
   useEffect(() => {
     async function load() {
       try {
@@ -160,7 +244,7 @@ export default function Page() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <StatCard
             key={i}
@@ -190,13 +274,22 @@ export default function Page() {
             {beneficiarios.map((b) => {
               const st =
                 statusMap[b.status?.toLowerCase()] ?? statusMap["pendente"];
+              console.log(st);
+              const typeMov = tipoMap[b.tipoMovimentacao] ?? {
+                Icon: SearchAlert,
+                className: "text-gray-500",
+                label: b.tipoMovimentacao ?? "Desconhecido",
+              };
               return (
                 <li
                   key={b.idBeneficiario}
-                  className="rounded-md border border-gray-200 bg-(--light-gray) px-3 py-3"
+                  className="rounded-md border border-gray-200 bg-(--light-gray) px-3 py-3 inset-shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex items-center gap-3">
+                      <div className={typeMov.className}>
+                        <typeMov.Icon />
+                      </div>
                       <p className="font-semibold text-sm truncate">{b.nome}</p>
                       <p className="text-xs text-gray-500">
                         {tipoLabel[b.tipoMovimentacao] ?? b.tipoMovimentacao}

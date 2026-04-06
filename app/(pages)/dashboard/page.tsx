@@ -38,15 +38,25 @@ export default function Page() {
   const [filterStatus, setFilterStatus] = useState<StatusFilter>("");
 
   const stats = [
+    { label: "Total", value: movements.length, icon: Files, color: "gray-icon" },
     {
-      label: "Total",
-      value: movements.length,
-      icon: Files,
-      color: "gray-icon",
+      label: "Pendentes",
+      value: movements.filter((m) => resolveMovementStatus(m.beneficiariosMovimentacao) === "pendente").length,
+      icon: Layers,
+      color: "orange-icon",
     },
-    { label: "Pendentes", value: 0, icon: Layers, color: "orange-icon" },
-    { label: "Em Análise", value: 0, icon: Clock, color: "blue-icon" },
-    { label: "Concluídos", value: 0, icon: Files, color: "green-icon" },
+    {
+      label: "Em Análise",
+      value: movements.filter((m) => resolveMovementStatus(m.beneficiariosMovimentacao) === "em_analise").length,
+      icon: Clock,
+      color: "blue-icon",
+    },
+    {
+      label: "Concluídos",
+      value: movements.filter((m) => resolveMovementStatus(m.beneficiariosMovimentacao) === "concluido").length,
+      icon: Files,
+      color: "green-icon",
+    },
   ];
 
   const filteredMovements = useMemo(() => {

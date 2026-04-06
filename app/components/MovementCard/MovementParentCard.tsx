@@ -122,7 +122,7 @@ export const MovementParentCard = ({
   const { Icon: StatusIcon, label: statusLabel, badgeClass: statusBadgeClass } = statusDisplayMap[resolveMovementStatus(beneficiarios)];
 
   return (
-    <Link href={`/movements/${id}`} className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:border-(--blue-icon) hover:shadow-md active:scale-[0.99]">
+    <Link href={`/movements/${id}`} className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:border-(--blue-icon) hover:shadow-md lg:active:scale-96 active:scale-90">
       <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
         {/* Header: nome + badge total */}
         <div className="flex items-start justify-between gap-3">
