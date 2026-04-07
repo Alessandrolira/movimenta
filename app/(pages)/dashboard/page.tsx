@@ -142,7 +142,7 @@ export default function Page() {
       )}
       <div className="space-y-6 p-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Olá, (Cliente)</h1>
+          <h1 className="text-3xl font-bold">Visão Geral</h1>
           <h2 className="opacity-60">
             Gerencie as movimentações do seu plano de saúde
           </h2>
@@ -176,7 +176,7 @@ export default function Page() {
         {/* Filtros */}
         <div className="flex flex-col gap-3">
           {/* Linha 1: busca (largura total) */}
-          <div className="relative w-full">
+          <div className="relative w-full focus-within:scale-100">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10 pointer-events-none" />
             <div className="[&_input]:pl-9">
               <Input

@@ -24,8 +24,7 @@ export default function NewMovementCard({
     { vinculo: File | null; pessoais: File[] }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [modalitySelect, setModalitySelect] = useState("Selecione a modalidade");
-
+  
   const addBenef = () => {
     const newBenef: BeneficiaryTypes = {
       nome: "",
@@ -160,7 +159,7 @@ export default function NewMovementCard({
   };
 
   return (
-    <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll h-full lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
+    <div className="bg-black/20 backdrop-blur-xs absolute items-center justify-center overflow-y-scroll h-screen lg:overflow-y-auto inset-0 z-50 p-4 md:p-16">
       <div className="bg-(--bg-default) text-(--black) rounded-lg md:min-w-3/4">
         <div className="flex p-6 border-b border-black/20 justify-between items-center">
           <h2 className="font-bold text-2xl">Nova Movimentação</h2>
@@ -195,10 +194,6 @@ export default function NewMovementCard({
               Beneficiários ({beneficiaries.length})
             </h2>
             <div className="md:flex gap-2 space-y-2 md:space-y-0">
-              <label className="flex gap-2 bg-white text-sm p-2 rounded border border-gray-200 shadow-md/20 hover:bg-(--branco) active:inset-shadow-sm/20 active:shadow-none cursor-pointer transition-all duration-50">
-                <File />
-                <p>Importar Planilha</p>
-              </label>
               <button
                 type="button"
                 onClick={addBenef}
