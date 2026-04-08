@@ -12,8 +12,6 @@ interface TeamCardProps {
 export const TeamCard = ({ nome, id, analistas }: TeamCardProps) => {
 
   const handleSeniorAnalist = analistas.find((analista) => analista.responsabilidade === "SENIOR")
-  console.log(handleSeniorAnalist)
-
   return (
     <Link
       href={`/teams/${id}`}
@@ -30,11 +28,11 @@ export const TeamCard = ({ nome, id, analistas }: TeamCardProps) => {
       </div>
       <div className="p-4 space-y-2">
         <p className="text-xs font-semibold text-(--cinza)">ANALISTAS:</p>
-        <ul className="flex items-start gap-2 rounded-lg bg-(--light-gray) px-3 py-2 border border-gray-200 inset-shadow-sm">
+        <ul className="items-start gap-2 rounded-lg bg-(--light-gray) px-3 py-2 border border-gray-200 inset-shadow-sm/10 text-sm text-gray-600 overflow-y-auto max-h-32">
           {analistas && analistas.length > 0 ? (
             analistas.map((analista, index) => (
               <div key={index} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-(--azul)" />
+                <div className="w-1 h-1 rounded-full bg-gray-600" />
                 <span>{analista.nome}</span>
               </div>
             ))

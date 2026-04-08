@@ -155,10 +155,16 @@ export const MovementParentCard = ({
     badgeClass: statusBadgeClass,
   } = statusDisplayMap[resolveMovementStatus(beneficiarios)];
 
+  const isConcluido = resolveMovementStatus(beneficiarios) === "concluido";
+
   return (
     <Link
       href={`/movements/${id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:border-(--blue-icon) hover:shadow-md lg:active:scale-96 active:scale-90"
+      className={`group flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 lg:active:scale-96 active:scale-90 ${
+        isConcluido
+          ? "border-green-200 bg-green-50 hover:border-green-400 hover:shadow-md"
+          : "border-gray-200 bg-white hover:border-(--blue-icon) hover:shadow-md"
+      }`}
     >
       <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
         {/* Header: nome + badge total */}
@@ -180,7 +186,9 @@ export const MovementParentCard = ({
 
         {/* Breakdown por tipo */}
         {Object.keys(tipoGroups).length > 0 && (
-          <div className="flex flex-col gap-1.5 rounded-xl border border-gray-200 bg-(--light-gray) px-3 py-2.5 inset-shadow-sm/20">
+          <div
+            className={`flex flex-col gap-1.5 rounded-xl border px-3 py-2.5 inset-shadow-sm/20 ${isConcluido ? "bg-green-100 border-green-400 inset-shadow-green-900" : "bg-(--light-gray) border-gray-200"}`}
+          >
             {Object.entries(tipoGroups).map(([tipo, count]) => {
               const config = tipoMap[tipo];
               if (!config)
@@ -240,7 +248,9 @@ export const MovementParentCard = ({
       </div>
 
       {/* Footer: data + status */}
-      <div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-(--light-gray) px-4 py-3 sm:px-5">
+      <div
+        className={`flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-5 ${isConcluido ? "border-green-200 bg-green-100" : "border-gray-100 bg-(--light-gray)"}`}
+      >
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-100">
             <IoPeople className="text-base text-(--blue-icon)" aria-hidden />

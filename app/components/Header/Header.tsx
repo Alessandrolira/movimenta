@@ -25,15 +25,17 @@ export default function Header({ role }: { role: "USER" | "ADMIN" }) {
         )}
 
         {/* Logout */}
-        <button
-          onClick={() => {
-            deleteAuthCookie("token");
-            window.location.href = "/login";
-          }}
-          className="cursor-pointer rounded-lg hover:bg-red-200 hover:text-red-600 transition-colors flex items-center gap-1 p-1 text-gray-500"
-        >
-          <LogOut />
-        </button>
+        {!isAdmin && (
+          <button
+            onClick={() => {
+              deleteAuthCookie("token");
+              window.location.href = "/login";
+            }}
+            className="cursor-pointer rounded-lg hover:bg-red-200 hover:text-red-600 transition-colors flex items-center gap-1 p-1 text-gray-500"
+          >
+            <LogOut />
+          </button>
+        )}
         {/* O botão de logout é visível para todos os usuários, mas a lógica de logout só é executada quando clicado */}
       </header>
 

@@ -10,5 +10,6 @@ export default async function SendMovement(
     observacao: observation,
     beneficiarios: payload,
   });
+  console.log(res);
   return res;
 }

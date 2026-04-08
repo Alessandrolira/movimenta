@@ -4,7 +4,7 @@ import { dadosEquipeType } from "@/app/types/dadosEquipeType";
 import { api } from "@/services/api";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Building2, Files, Users } from "lucide-react";
+import { Building2, CheckCircle2, Files, Trash2, Users, XCircle } from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
 import { parseCnpj } from "@/app/utils/format";
 import Link from "next/link";
@@ -30,6 +30,33 @@ export default function Page() {
 
   const [dadosEquipe, setDadosEquipe] = useState<dadosEquipeType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  function showToast(type: "success" | "error", message: string) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  async function handleDeleteAnalista(idAnalista: string) {
+    if (!confirm("Tem certeza que deseja excluir este analista?")) return;
+    setDeletingId(idAnalista);
+    console.log("Excluindo analista com ID:", idAnalista);
+    try {
+      await api.delete(`/analista/${idAnalista}`);
+      setDadosEquipe((prev) =>
+        prev
+          ? { ...prev, analistas: prev.analistas.filter((a) => a.idAnalista !== idAnalista) }
+          : prev,
+      );
+      showToast("success", "Analista excluído com sucesso.");
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Erro ao excluir analista. Tente novamente.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   useEffect(() => {
     async function loadPageData() {
@@ -46,8 +73,6 @@ export default function Page() {
 
     loadPageData();
   }, [idEquipe]);
-
-  console.log("Dados da equipe:", dadosEquipe);
 
   const stats = [
     {
@@ -72,6 +97,18 @@ export default function Page() {
 
   return (
     <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg text-sm font-medium transition-all ${
+          toast.type === "success"
+            ? "bg-green-50 border-green-200 text-green-700"
+            : "bg-red-50 border-red-200 text-red-700"
+        }`}>
+          {toast.type === "success"
+            ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+            : <XCircle className="h-4 w-4 shrink-0" />}
+          {toast.message}
+        </div>
+      )}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-md sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3 min-w-0">
@@ -82,11 +119,11 @@ export default function Page() {
             </div>
 
             <p className="opacity-60 text-sm sm:text-base">
-              Detalhes da equipe e suas atribuicoes
+              Detalhes da equipe e suas atribuições
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg bg-(--light-gray) px-3 py-2">
+              <div className="rounded-lg bg-(--light-gray) px-3 py-2 inset-shadow-sm/20">
                 <p className="text-xs uppercase tracking-wide text-gray-500">
                   Total de analistas
                 </p>
@@ -94,7 +131,7 @@ export default function Page() {
                   {dadosEquipe?.analistas?.length || 0}
                 </p>
               </div>
-              <div className="rounded-lg bg-(--light-gray) px-3 py-2">
+              <div className="rounded-lg bg-(--light-gray) px-3 py-2 inset-shadow-sm/20">
                 <p className="text-xs uppercase tracking-wide text-gray-500">
                   Empresas atribuidas
                 </p>
@@ -105,7 +142,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-(--light-gray) px-4 py-3 min-w-52">
+          <div className="rounded-xl border border-gray-200 bg-linear-to-r to-blue-50 from-(--light-gray) px-4 py-3 min-w-52 inset-shadow-sm/20">
             <p className="text-xs uppercase tracking-wide text-gray-500">
               Vidas ativas
             </p>
@@ -172,15 +209,27 @@ export default function Page() {
                           {analista.email}
                         </p>
                       </div>
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold shrink-0 ${
-                          responsabilidadeBadge[analista.responsabilidade] ||
-                          "bg-gray-100 text-gray-700 border-gray-200"
-                        }`}
-                      >
-                        {responsabilidadeLabel[analista.responsabilidade] ||
-                          analista.responsabilidade}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                            responsabilidadeBadge[analista.responsabilidade] ||
+                            "bg-gray-100 text-gray-700 border-gray-200"
+                          }`}
+                        >
+                          {responsabilidadeLabel[analista.responsabilidade] ||
+                            analista.responsabilidade}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDeleteAnalista(analista.idAnalista)
+                          }
+                          disabled={deletingId === analista.idAnalista}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </li>
                 ))}

@@ -13,13 +13,15 @@ import { useRouter } from "next/navigation";
 interface NewMovementProps {
   companies: { label: string; value: string }[];
   onClick: () => void;
+  defaultCompany?: string;
 }
 
 export default function NewMovementCard({
   onClick,
   companies,
+  defaultCompany,
 }: NewMovementProps) {
-  const [companySelect, setCompanySelect] = useState("Seleciona a empresa");
+  const [companySelect, setCompanySelect] = useState(defaultCompany ?? "Seleciona a empresa");
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryTypes[]>([]);
   const [beneficiaryFiles, setBeneficiaryFiles] = useState<
     { vinculo: File | null; pessoais: File[] }[]
@@ -240,7 +242,10 @@ export default function NewMovementCard({
       await SendMovement(sanitized, idEmpresa, descritivo);
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 1800);
+      setTimeout(() => {
+        onClick();
+        router.refresh();
+      }, 1800);
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ??
@@ -265,13 +270,19 @@ export default function NewMovementCard({
           <div className="grid gap-2 md:grid-cols-3 md:gap-8">
             <div className="grid gap-2">
               <Label htmlFor="company">Empresa</Label>
-              <CustomSelect
-                id="company"
-                label={companySelect}
-                onChange={setCompanySelect}
-                options={companies}
-                value={companySelect}
-              />
+              {defaultCompany ? (
+                <div className="h-10 w-full border border-gray-200 shadow-sm rounded-xl flex items-center px-4 bg-gray-50 text-sm text-gray-600 cursor-not-allowed">
+                  {companies.find((c) => c.value === defaultCompany)?.label ?? defaultCompany}
+                </div>
+              ) : (
+                <CustomSelect
+                  id="company"
+                  label="Selecione a empresa"
+                  onChange={setCompanySelect}
+                  options={companies}
+                  value={companySelect}
+                />
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="obs">Descritivo/Observação</Label>

@@ -3,15 +3,21 @@
 import { MovementTypes } from "@/app/types/MovementTypes";
 import {
   Clock,
+  CreditCard,
   Files,
   Layers,
   Plus,
+  RefreshCw,
   Search,
   ArrowDownAZ,
   ArrowUpAZ,
   ArrowDownNarrowWide,
   ArrowUpNarrowWide,
+  ArrowRight,
+  UserMinus,
+  UserPlus,
 } from "lucide-react";
+import Link from "next/link";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
 import StatCard from "@/app/components/StatCard/StatCard";
 import { useEffect, useMemo, useState } from "react";
@@ -19,62 +25,180 @@ import { api } from "@/services/api";
 import NewMovementCard from "@/app/components/NewMovementCard/NewMovementCard";
 import { verifyConnected } from "@/app/utils/verifyConnected";
 import { MovementParentCard } from "@/app/components/MovementCard/MovementParentCard";
-import { resolveMovementStatus } from "@/app/utils/format";
+import { parseDate, resolveMovementStatus } from "@/app/utils/format";
 import { getUserRole } from "@/services/auth";
 
 type SortOrder = "asc" | "desc" | "";
-type StatusFilter = "pendente" | "em_analise" | "concluido" | "";
+
+type UserMovementItem = {
+  idEmpresa: string;
+  nomeEmpresa: string;
+  cnpjEmpresa: string;
+  idMovimentacao: string;
+  nomeBeneficiario: string;
+  tipoMovimentacao: string;
+  observacao: string;
+  dataMovimentacao: string;
+  status: string;
+};
+
+const statusMap: Record<string, { label: string; className: string }> = {
+  PENDENTE: {
+    label: "Pendente",
+    className: "bg-orange-50 text-orange-700 border-orange-200",
+  },
+  ANALISE: {
+    label: "Em Análise",
+    className: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  ENVIADO_OPERADORA: {
+    label: "Enviado",
+    className: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  },
+  PENDENTE_OPERADORA: {
+    label: "Pend. Operadora",
+    className: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  },
+  DECLINIO: {
+    label: "Declínio",
+    className: "bg-red-50 text-red-700 border-red-200",
+  },
+  CONCLUIDO: {
+    label: "Concluído",
+    className: "bg-green-50 text-green-700 border-green-200",
+  },
+};
+
+const tipoMap: Record<
+  string,
+  { label: string; Icon: React.ElementType; iconClass: string }
+> = {
+  INCLUSAO: { label: "Inclusão", Icon: UserPlus, iconClass: "text-green-500" },
+  EXCLUSAO: { label: "Exclusão", Icon: UserMinus, iconClass: "text-red-500" },
+  ALTERACAO_DE_DADOS_CADASTRAIS: {
+    label: "Alteração",
+    Icon: RefreshCw,
+    iconClass: "text-orange-500",
+  },
+  SEGUNDA_VIA_CARTEIRINHA: {
+    label: "2ª Via",
+    Icon: CreditCard,
+    iconClass: "text-purple-500",
+  },
+};
 
 export default function Page() {
+  const [role, setRole] = useState<"USER" | "ADMIN" | null>(null);
+
+  // Admin state
   const [movements, setMovements] = useState<MovementTypes[]>([]);
-  const [toggleNewMovement, setToggleNewMovement] = useState<boolean>(false);
+  const [toggleNewMovement, setToggleNewMovement] = useState(false);
   const [companies, setCompanies] = useState<
     { label: string; value: string }[]
   >([]);
-
-  const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("");
   const [sortDate, setSortDate] = useState<SortOrder>("");
-  const [filterStatus, setFilterStatus] = useState<StatusFilter>("");
+  const [filterStatus, setFilterStatus] = useState("");
 
-  const stats = [
-    {
-      label: "Total",
-      value: movements.length,
-      icon: Files,
-      color: "gray-icon",
-    },
-    {
-      label: "Pendentes",
-      value: movements.filter(
-        (m) =>
-          resolveMovementStatus(m.beneficiariosMovimentacao) === "pendente",
-      ).length,
-      icon: Layers,
-      color: "orange-icon",
-    },
-    {
-      label: "Em Análise",
-      value: movements.filter(
-        (m) => resolveMovementStatus(m.beneficiariosMovimentacao) === "analise",
-      ).length,
-      icon: Clock,
-      color: "blue-icon",
-    },
-    {
-      label: "Concluídos",
-      value: movements.filter(
-        (m) =>
-          resolveMovementStatus(m.beneficiariosMovimentacao) === "concluido",
-      ).length,
-      icon: Files,
-      color: "green-icon",
-    },
-  ];
+  // User state
+  const [userMovements, setUserMovements] = useState<UserMovementItem[]>([]);
+  const [userFilterStatus, setUserFilterStatus] = useState("");
 
-  const filteredMovements = useMemo(() => {
+  const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    verifyConnected(window.location.href);
+
+    async function load() {
+      const r = (await getUserRole()) as "USER" | "ADMIN";
+      setRole(r);
+      setIsLoading(true);
+      try {
+        if (r === "ADMIN") {
+          await Promise.all([
+            api
+              .get("/movimentacao")
+              .then((res) => setMovements(res.data || [])),
+            api
+              .get("/empresas")
+              .then((res) =>
+                setCompanies(
+                  res.data.map((c: any) => ({
+                    label: c.nome,
+                    value: c.idEmpresa,
+                  })),
+                ),
+              ),
+          ]);
+        } else {
+          await Promise.all([
+            api
+              .get("/movimentacao/user")
+              .then((res) => setUserMovements(res.data || [])),
+            api
+              .get("/empresas/user")
+              .then((res) =>
+                setCompanies(
+                  (res.data || []).map((c: any) => ({
+                    label: c.nome,
+                    value: c.idEmpresa,
+                  })),
+                ),
+              ),
+          ]);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  // ── Admin ───────────────────────────────────────────────────────────────────
+  const adminStats = useMemo(
+    () => [
+      {
+        label: "Total",
+        value: movements.length,
+        icon: Files,
+        color: "gray-icon",
+      },
+      {
+        label: "Pendentes",
+        value: movements.filter(
+          (m) =>
+            resolveMovementStatus(m.beneficiariosMovimentacao) === "pendente",
+        ).length,
+        icon: Layers,
+        color: "orange-icon",
+      },
+      {
+        label: "Em Análise",
+        value: movements.filter(
+          (m) =>
+            resolveMovementStatus(m.beneficiariosMovimentacao) === "analise",
+        ).length,
+        icon: Clock,
+        color: "blue-icon",
+      },
+      {
+        label: "Concluídos",
+        value: movements.filter(
+          (m) =>
+            resolveMovementStatus(m.beneficiariosMovimentacao) === "concluido",
+        ).length,
+        icon: Files,
+        color: "green-icon",
+      },
+    ],
+    [movements],
+  );
+
+  const filteredAdmin = useMemo(() => {
     const q = search.toLowerCase();
-
     let result = movements.filter((m) => {
       const matchSearch =
         !q ||
@@ -82,14 +206,11 @@ export default function Page() {
         m.beneficiariosMovimentacao.some((b) =>
           b.nome.toLowerCase().includes(q),
         );
-
       const matchStatus =
         !filterStatus ||
         resolveMovementStatus(m.beneficiariosMovimentacao) === filterStatus;
-
       return matchSearch && matchStatus;
     });
-
     if (sortOrder === "asc")
       result = [...result].sort((a, b) =>
         a.nomeEmpresa.localeCompare(b.nomeEmpresa),
@@ -98,7 +219,6 @@ export default function Page() {
       result = [...result].sort((a, b) =>
         b.nomeEmpresa.localeCompare(a.nomeEmpresa),
       );
-
     if (sortDate) {
       result = [...result].sort((a, b) => {
         const toTs = (d: string | number[]) =>
@@ -110,40 +230,70 @@ export default function Page() {
           : toTs(a.dataMovimentacao) - toTs(b.dataMovimentacao);
       });
     }
-
     return result;
   }, [movements, search, sortOrder, sortDate, filterStatus]);
 
-  async function getCompanies() {
-    try {
-      const res = await api.get("/empresas");
-      setCompanies(
-        res.data.map((company: any) => ({
-          label: company.nome,
-          value: company.idEmpresa,
-        })),
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  }
+  // ── User ────────────────────────────────────────────────────────────────────
+  const userStats = useMemo(
+    () => [
+      {
+        label: "Total",
+        value: userMovements.length,
+        icon: Files,
+        color: "gray-icon",
+      },
+      {
+        label: "Pendentes",
+        value: userMovements.filter(
+          (m) => m.status?.toUpperCase() === "PENDENTE",
+        ).length,
+        icon: Layers,
+        color: "orange-icon",
+      },
+      {
+        label: "Em Análise",
+        value: userMovements.filter(
+          (m) => m.status?.toUpperCase() === "ANALISE",
+        ).length,
+        icon: Clock,
+        color: "blue-icon",
+      },
+      {
+        label: "Concluídos",
+        value: userMovements.filter(
+          (m) => m.status?.toUpperCase() === "CONCLUIDO",
+        ).length,
+        icon: Files,
+        color: "green-icon",
+      },
+    ],
+    [userMovements],
+  );
 
-  async function getMoviments() {
-    try {
-      const res = await api.get("/movimentacao");
-      setMovements(res.data || []);
-    } catch (err) {
-      console.error(err);
-    }
-  }
+  const filteredUser = useMemo(() => {
+    const q = search.toLowerCase();
+    let result = userMovements.filter((m) => {
+      const matchSearch =
+        !q ||
+        m.nomeEmpresa.toLowerCase().includes(q) ||
+        m.nomeBeneficiario.toLowerCase().includes(q);
+      const matchStatus =
+        !userFilterStatus || m.status?.toUpperCase() === userFilterStatus;
+      return matchSearch && matchStatus;
+    });
+    // Concluídos por último
+    result = [...result].sort((a, b) => {
+      const aCon = a.status?.toUpperCase() === "CONCLUIDO";
+      const bCon = b.status?.toUpperCase() === "CONCLUIDO";
+      if (aCon === bCon) return 0;
+      return aCon ? 1 : -1;
+    });
+    return result;
+  }, [userMovements, search, userFilterStatus]);
 
-  useEffect(() => {
-    verifyConnected(window.location.href);
-    getMoviments();
-    getCompanies();
-  }, []);
-
-  const hasFilters = search || sortOrder || sortDate || filterStatus;
+  const stats = role === "USER" ? userStats : adminStats;
+  const hasFilters =
+    search || sortOrder || sortDate || filterStatus || userFilterStatus;
 
   return (
     <div className="relative">
@@ -153,6 +303,7 @@ export default function Page() {
           onClick={() => setToggleNewMovement(false)}
         />
       )}
+
       <div className="space-y-6 p-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Visão Geral</h1>
@@ -177,18 +328,19 @@ export default function Page() {
           <h2 className="text-2xl font-semibold tracking-wide">
             Movimentações
           </h2>
-          <button
-            onClick={() => setToggleNewMovement(true)}
-            className="flex gap-2 bg-(--blue-button) p-2 text-white cursor-pointer rounded-lg hover:bg-(--azul) active:scale-95 transition duration-100"
-          >
-            <Plus className="scale-70" />
-            <p className="hidden lg:block">Nova Movimentação</p>
-          </button>
+          {role === "USER" && (
+            <button
+              onClick={() => setToggleNewMovement(true)}
+              className="flex gap-2 bg-(--blue-button) p-2 text-white cursor-pointer rounded-lg hover:bg-(--azul) active:scale-95 transition duration-100"
+            >
+              <Plus className="scale-70" />
+              <p className="hidden lg:block">Nova Movimentação</p>
+            </button>
+          )}
         </div>
 
-        {/* Filtros */}
+        {/* ── Filtros ── */}
         <div className="flex flex-col lg:flex-row gap-3 items-center">
-          {/* Linha 1: busca (largura total) */}
           <div className="flex w-full items-center bg-white border border-gray-200 rounded-xl pl-4 pr-8 py-1 gap-1">
             <Search className="p-1 m-1 text-gray-400" />
             <input
@@ -201,76 +353,176 @@ export default function Page() {
             />
           </div>
 
-          {/* Linha 2: A-Z | data | status — empilha no mobile */}
           <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-3 w-full lg:w-auto">
-            {/* Ordenação A-Z */}
-            <button
-              onClick={() =>
-                setSortOrder((prev) =>
-                  prev === "asc" ? "desc" : prev === "desc" ? "" : "asc",
-                )
-              }
-              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium shadow-sm transition cursor-pointer whitespace-nowrap
-                ${sortOrder ? "border-blue-200 bg-(--blue-icon)/10 text-(--azul)" : "border-gray-200 bg-white text-gray-600 hover:border-blue-200"}`}
-            >
-              {sortOrder === "desc" ? (
-                <ArrowUpAZ className="h-4 w-4" />
-              ) : (
-                <ArrowDownAZ className="h-4 w-4" />
-              )}
-              {sortOrder === "asc"
-                ? "A → Z"
-                : sortOrder === "desc"
-                  ? "Z → A"
-                  : "A - Z"}
-            </button>
-
-            {/* Ordenação por data */}
-            <button
-              onClick={() =>
-                setSortDate((prev) =>
-                  prev === "desc" ? "asc" : prev === "asc" ? "" : "desc",
-                )
-              }
-              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium shadow-sm transition cursor-pointer whitespace-nowrap
-                ${sortDate ? "border-blue-200 bg-(--blue-icon)/10 text-(--azul)" : "border-gray-200 bg-white text-gray-600 hover:border-blue-200"}`}
-            >
-              {sortDate === "asc" ? (
-                <ArrowUpNarrowWide className="h-4 w-4" />
-              ) : (
-                <ArrowDownNarrowWide className="h-4 w-4" />
-              )}
-              {sortDate === "desc"
-                ? "Mais recente"
-                : sortDate === "asc"
-                  ? "Mais antiga"
-                  : "Data"}
-            </button>
-
-            {/* Filtro de status — ocupa as 2 colunas no mobile */}
+            {role === "ADMIN" && (
+              <>
+                <button
+                  onClick={() =>
+                    setSortOrder((p) =>
+                      p === "asc" ? "desc" : p === "desc" ? "" : "asc",
+                    )
+                  }
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium shadow-sm transition cursor-pointer whitespace-nowrap
+                    ${sortOrder ? "border-blue-200 bg-(--blue-icon)/10 text-(--azul)" : "border-gray-200 bg-white text-gray-600 hover:border-blue-200"}`}
+                >
+                  {sortOrder === "desc" ? (
+                    <ArrowUpAZ className="h-4 w-4" />
+                  ) : (
+                    <ArrowDownAZ className="h-4 w-4" />
+                  )}
+                  {sortOrder === "asc"
+                    ? "A → Z"
+                    : sortOrder === "desc"
+                      ? "Z → A"
+                      : "A - Z"}
+                </button>
+                <button
+                  onClick={() =>
+                    setSortDate((p) =>
+                      p === "desc" ? "asc" : p === "asc" ? "" : "desc",
+                    )
+                  }
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium shadow-sm transition cursor-pointer whitespace-nowrap
+                    ${sortDate ? "border-blue-200 bg-(--blue-icon)/10 text-(--azul)" : "border-gray-200 bg-white text-gray-600 hover:border-blue-200"}`}
+                >
+                  {sortDate === "asc" ? (
+                    <ArrowUpNarrowWide className="h-4 w-4" />
+                  ) : (
+                    <ArrowDownNarrowWide className="h-4 w-4" />
+                  )}
+                  {sortDate === "desc"
+                    ? "Mais recente"
+                    : sortDate === "asc"
+                      ? "Mais antiga"
+                      : "Data"}
+                </button>
+              </>
+            )}
             <div className="col-span-2 sm:col-span-1 sm:w-48">
               <CustomSelect
                 id="filterStatus"
                 label="Todos os status"
-                value={filterStatus}
-                onChange={(val) => setFilterStatus(val as StatusFilter)}
+                value={role === "USER" ? userFilterStatus : filterStatus}
+                onChange={(val) =>
+                  role === "USER"
+                    ? setUserFilterStatus(val)
+                    : setFilterStatus(val)
+                }
                 options={[
                   { label: "Todos os status", value: "" },
-                  { label: "Pendente", value: "pendente" },
-                  { label: "Análise", value: "analise" },
-                  { label: "Enviado Operadora", value: "enviado_operadora" },
-                  { label: "Pend. Operadora", value: "pendente_operadora" },
-                  { label: "Declínio", value: "declinio" },
-                  { label: "Concluído", value: "concluido" },
+                  {
+                    label: "Pendente",
+                    value: role === "USER" ? "PENDENTE" : "pendente",
+                  },
+                  {
+                    label: "Em Análise",
+                    value: role === "USER" ? "ANALISE" : "analise",
+                  },
+                  {
+                    label: "Enviado Operadora",
+                    value:
+                      role === "USER"
+                        ? "ENVIADO_OPERADORA"
+                        : "enviado_operadora",
+                  },
+                  {
+                    label: "Pend. Operadora",
+                    value:
+                      role === "USER"
+                        ? "PENDENTE_OPERADORA"
+                        : "pendente_operadora",
+                  },
+                  {
+                    label: "Declínio",
+                    value: role === "USER" ? "DECLINIO" : "declinio",
+                  },
+                  {
+                    label: "Concluído",
+                    value: role === "USER" ? "CONCLUIDO" : "concluido",
+                  },
                 ]}
               />
             </div>
           </div>
         </div>
 
-        {filteredMovements.length > 0 ? (
+        {/* ── Lista ── */}
+        {isLoading ? (
+          <p className="text-center text-2xl italic opacity-60 py-8">
+            Carregando...
+          </p>
+        ) : role === "USER" ? (
+          filteredUser.length === 0 ? (
+            <p className="text-center text-2xl italic opacity-60">
+              {hasFilters
+                ? "Nenhuma movimentação encontrada"
+                : "Não há movimentações realizadas"}
+            </p>
+          ) : (
+            <ul className="grid gap-2">
+              {filteredUser.map((m) => {
+                const st = statusMap[m.status?.toUpperCase()] ?? {
+                  label: m.status,
+                  className: "bg-gray-50 text-gray-700 border-gray-200",
+                };
+                const tipo = tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
+                const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
+                return (
+                  <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
+                    <Link
+                      href={`/movements/${m.idMovimentacao}`}
+                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border px-4 py-3 transition-all duration-100 inset-shadow-sm ${
+                        isConcluido
+                          ? "border-green-200 bg-green-50 hover:border-green-300 hover:bg-green-100"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          {tipo && (
+                            <tipo.Icon
+                              className={`h-4 w-4 shrink-0 ${tipo.iconClass}`}
+                            />
+                          )}
+                          <p className="font-semibold text-sm truncate">
+                            {m.nomeBeneficiario}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">
+                          {m.nomeEmpresa}
+                          {m.observacao && <> &middot; {m.observacao}</>}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {parseDate(m.dataMovimentacao)}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        {tipo && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                            {tipo.label}
+                          </span>
+                        )}
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${st.className}`}
+                        >
+                          {st.label}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )
+        ) : filteredAdmin.length === 0 ? (
+          <p className="text-center text-2xl italic opacity-60">
+            {hasFilters
+              ? "Nenhuma movimentação encontrada"
+              : "Não há movimentações realizadas"}
+          </p>
+        ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMovements.map((movement, i) => (
+            {filteredAdmin.slice(0, 8).map((movement, i) => (
               <MovementParentCard
                 key={i}
                 dataMovimentacao={movement.dataMovimentacao}
@@ -281,13 +533,21 @@ export default function Page() {
                 beneficiarios={movement.beneficiariosMovimentacao}
               />
             ))}
+            {filteredAdmin.length > 8 && (
+              <Link
+                href="/movements"
+                className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-gray-500 transition-all duration-200 hover:border-(--blue-icon) hover:text-(--azul) hover:shadow-md active:scale-95 min-h-40 p-6"
+              >
+                <ArrowRight className="h-8 w-8" />
+                <span className="text-base font-semibold">
+                  Ver todas as movimentações
+                </span>
+                <span className="text-sm opacity-70">
+                  {filteredAdmin.length - 8} restantes
+                </span>
+              </Link>
+            )}
           </div>
-        ) : (
-          <p className="text-center text-2xl italic opacity-60">
-            {hasFilters
-              ? "Nenhuma movimentação encontrada"
-              : "Não há movimentações realizadas"}
-          </p>
         )}
       </div>
     </div>
