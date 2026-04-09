@@ -2,6 +2,8 @@
 
 import { MovementTypes } from "@/app/types/MovementTypes";
 import {
+  CheckCircle2,
+  ChevronDown,
   Clock,
   CreditCard,
   Files,
@@ -100,6 +102,7 @@ export default function Page() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showConcluidos, setShowConcluidos] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -251,6 +254,28 @@ export default function Page() {
     });
     return result;
   }, [userMovements, search, userFilterStatus]);
+
+  const concludedAdmin = useMemo(() => {
+    const q = search.toLowerCase();
+    return movements.filter((m) => {
+      const matchSearch =
+        !q ||
+        m.nomeEmpresa.toLowerCase().includes(q) ||
+        m.beneficiariosMovimentacao.some((b) => b.nome.toLowerCase().includes(q));
+      return resolveMovementStatus(m.beneficiariosMovimentacao) === "concluido" && matchSearch;
+    });
+  }, [movements, search]);
+
+  const concludedUser = useMemo(() => {
+    const q = search.toLowerCase();
+    return userMovements.filter((m) => {
+      const matchSearch =
+        !q ||
+        m.nomeEmpresa.toLowerCase().includes(q) ||
+        m.nomeBeneficiario.toLowerCase().includes(q);
+      return m.status?.toUpperCase() === "CONCLUIDO" && matchSearch;
+    });
+  }, [userMovements, search]);
 
   const hasFilters =
     search || sortOrder || sortDate || filterStatus || userFilterStatus;
@@ -514,6 +539,81 @@ export default function Page() {
           </ul>
         )}
       </div>
+
+      {/* ── Concluídos ── */}
+      {!isLoading &&
+        filterStatus !== "concluido" &&
+        userFilterStatus !== "CONCLUIDO" &&
+        (() => {
+          const list = role === "ADMIN" ? concludedAdmin : concludedUser;
+          if (list.length === 0) return null;
+          return (
+            <div className="rounded-2xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowConcluidos((p) => !p)}
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 cursor-pointer hover:bg-green-100 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                  <span className="font-semibold text-green-800">Concluídos</span>
+                  <span className="inline-flex items-center rounded-full border border-green-200 bg-white px-2 py-0.5 text-xs font-semibold text-green-700">
+                    {list.length}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-green-600 transition-transform duration-200 ${showConcluidos ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {showConcluidos && (
+                <div className="border-t border-green-200 p-4 sm:p-5">
+                  {role === "ADMIN" ? (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {(list as typeof concludedAdmin).map((movement) => (
+                        <MovementParentCard
+                          key={movement.idMovimentacao}
+                          id={movement.idMovimentacao}
+                          nomeEmpresa={movement.nomeEmpresa}
+                          dataMovimentacao={movement.dataMovimentacao}
+                          observacao={movement.observacao}
+                          modalidade={movement.modalidade}
+                          beneficiarios={movement.beneficiariosMovimentacao}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <ul className="grid gap-2">
+                      {(list as typeof concludedUser).map((m) => {
+                        const tipo = tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
+                        return (
+                          <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
+                            <Link
+                              href={`/movements/${m.idMovimentacao}`}
+                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-green-200 bg-white px-4 py-3 hover:border-green-300 hover:bg-green-50 transition-all duration-100"
+                            >
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  {tipo && <tipo.Icon className={`h-4 w-4 shrink-0 ${tipo.iconClass}`} />}
+                                  <p className="font-semibold text-sm truncate">{m.nomeBeneficiario}</p>
+                                </div>
+                                <p className="text-xs text-gray-500 truncate">{m.nomeEmpresa}</p>
+                                <p className="text-xs text-gray-400">{parseDate(m.dataMovimentacao)}</p>
+                              </div>
+                              <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 shrink-0">
+                                Concluído
+                              </span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
     </div>
   );
 }
