@@ -121,7 +121,6 @@ export default function Page() {
   return (
     <>
       <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <p>askjdlhskjdhkjshdkajshdkjasdh</p>
         {toast && (
           <div
             className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg text-sm font-medium transition-all ${
