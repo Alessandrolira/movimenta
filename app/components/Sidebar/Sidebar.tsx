@@ -7,7 +7,6 @@ import {
   Users,
   LogOut,
   X,
-  ArrowRightLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -21,7 +20,6 @@ const menuItems = [
   { label: "Dashboard", href: "/dashboard", Icon: LayoutDashboard },
   { label: "Empresas", href: "/companies", Icon: Building2 },
   { label: "Equipes", href: "/teams", Icon: Users },
-  { label: "Movimentações", href: "/movements", Icon: ArrowRightLeft },
 ];
 
 export const Sidebar = ({ onClose }: SidebarProps) => {
