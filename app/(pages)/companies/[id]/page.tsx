@@ -21,7 +21,6 @@ import { GiHealthNormal } from "react-icons/gi";
 import { FaTooth } from "react-icons/fa";
 import Link from "next/link";
 import { FaUserPlus } from "react-icons/fa";
-import { VariacaoVidasType } from "@/app/types/VariacaoVidasType";
 import TransferirAnalistaModal from "@/app/components/TransferirAnalistaModal/TransferirAnalistaModal";
 
 export default function Page() {
@@ -31,7 +30,7 @@ export default function Page() {
   const [company, setCompany] = useState<CompanyTypes>();
   const [dadosGerais, setDadosGerais] = useState<DadosGeraisType>();
   const [isLoading, setIsLoading] = useState(true);
-  const [dadosGraficos, setDadosGraficos] = useState<VariacaoVidasType[]>([]);
+  const [dadosGraficos, setDadosGraficos] = useState<{ label: string; totalVidas: number }[]>([]);
   const [reativando, setReativando] = useState<string | null>(null);
   const [modalTransferir, setModalTransferir] = useState(false);
 
@@ -74,8 +73,8 @@ export default function Page() {
 
   async function getDadosGraficos() {
     try {
-      const res = await api.get(`/movimentacao/variacaoVidas/${idEmpresa}`);
-      setDadosGraficos(res.data);
+      const res = await api.get(`/empresas/${idEmpresa}/evolucao-vidas`);
+      setDadosGraficos(res.data.evolucao ?? []);
     } catch (err) {
       console.error(err);
     }
@@ -158,47 +157,14 @@ export default function Page() {
   const ModalidadeIcon = modalidadeConfig.value;
 
   const barChartData = useMemo(() => {
-    const historicoPorDia = dadosGraficos
-      .map((item) => ({
-        date: new Date(item.data),
-        value: Number(item.quantidadeVidas),
-      }))
-      .filter(
-        (item) =>
-          !Number.isNaN(item.date.getTime()) &&
-          Number.isFinite(item.value) &&
-          item.value > 0,
-      )
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .reduce((acc, item) => {
-        const label = item.date.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-        });
-
-        acc.set(label, item.value);
-        return acc;
-      }, new Map<string, number>());
-
-    const firstBar = {
-      label: "Inicial",
-      value: company?.qtdVidasAtivas ?? 0,
-      isInitial: true,
-    };
-
-    const historico = Array.from(historicoPorDia.entries()).map(
-      ([label, value]) => ({
-        label,
-        value,
-        isInitial: false,
-      }),
-    );
-
-    const series = [firstBar, ...historico];
+    const series = dadosGraficos.map((item, index) => ({
+      label: item.label,
+      value: item.totalVidas,
+      isInitial: index === 0,
+    }));
     const maxValue = Math.max(...series.map((item) => item.value), 1);
-
     return { series, maxValue };
-  }, [dadosGraficos, company?.qtdVidasAtivas]);
+  }, [dadosGraficos]);
 
   return (
     <>

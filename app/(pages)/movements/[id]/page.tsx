@@ -80,7 +80,6 @@ const statusOptions = [
     hover: "hover:bg-green-50 hover:border-green-300 hover:text-green-600",
   },
 ];
-import StatCard from "@/app/components/StatCard/StatCard";
 import { formatCPF, parseDate, resolveMovementStatus } from "@/app/utils/format";
 import { GiHealthNormal } from "react-icons/gi";
 import { FaTooth } from "react-icons/fa";
@@ -303,14 +302,14 @@ export default function Page() {
       value: beneficiarios.filter((b) => b.status?.toLowerCase() === "pendente")
         .length,
       icon: Clock,
-      color: "orange-icon",
+      colorStyle: "var(--orange-icon)",
     },
     {
       label: "Em Análise",
       value: beneficiarios.filter((b) => b.status?.toLowerCase() === "analise")
         .length,
       icon: Search,
-      color: "blue-icon",
+      colorStyle: "var(--blue-icon)",
     },
     {
       label: "Enviados",
@@ -318,7 +317,7 @@ export default function Page() {
         (b) => b.status?.toLowerCase() === "enviado_operadora",
       ).length,
       icon: Send,
-      color: "indigo-icon",
+      colorStyle: "var(--indigo-icon)",
     },
     {
       label: "Pend. Operadora",
@@ -326,14 +325,14 @@ export default function Page() {
         (b) => b.status?.toLowerCase() === "pendente_operadora",
       ).length,
       icon: AlertCircle,
-      color: "yellow-icon",
+      colorStyle: "var(--yellow-icon)",
     },
     {
       label: "Declínio",
       value: beneficiarios.filter((b) => b.status?.toLowerCase() === "declinio")
         .length,
       icon: X,
-      color: "red-icon",
+      colorStyle: "var(--red-icon)",
     },
     {
       label: "Concluídos",
@@ -341,7 +340,7 @@ export default function Page() {
         (b) => b.status?.toLowerCase() === "concluido",
       ).length,
       icon: CheckCircle2,
-      color: "green-icon",
+      colorStyle: "var(--green-icon)",
     },
   ];
 
@@ -412,21 +411,24 @@ export default function Page() {
               <Users className="h-4 w-4 text-(--blue-icon)" />
               <span>Total nesta movimentação</span>
             </div>
+            <div className="mt-3 flex items-center gap-2 flex-wrap border-t border-gray-200 pt-3">
+              {stats.map((stat, i) => (
+                <div key={i} className="relative group">
+                  <div className="flex items-center justify-center rounded-lg p-1.5 bg-white border border-gray-200" style={{ color: stat.colorStyle }}>
+                    <stat.icon className="h-4 w-4" />
+                    {stat.value > 0 && (
+                      <span className="ml-1 text-xs font-semibold">{stat.value}</span>
+                    )}
+                  </div>
+                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded-md bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    {stat.label}: {stat.value}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats.map((stat, i) => (
-          <StatCard
-            key={i}
-            label={stat.label}
-            value={stat.value}
-            icon={stat.icon}
-            color={stat.color}
-          />
-        ))}
       </div>
 
       {movement?.observacao && (
