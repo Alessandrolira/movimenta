@@ -167,15 +167,14 @@ export default function Page() {
   const filteredAdmin = useMemo(() => {
     const q = search.toLowerCase();
     let result = movements.filter((m) => {
+      const status = resolveMovementStatus(m.beneficiariosMovimentacao);
       const matchSearch =
         !q ||
         m.nomeEmpresa.toLowerCase().includes(q) ||
         m.beneficiariosMovimentacao.some((b) =>
           b.nome.toLowerCase().includes(q),
         );
-      const matchStatus =
-        !filterStatus ||
-        resolveMovementStatus(m.beneficiariosMovimentacao) === filterStatus;
+      const matchStatus = filterStatus ? status === filterStatus : status !== "concluido";
       return matchSearch && matchStatus;
     });
     if (sortOrder === "asc")
@@ -197,14 +196,6 @@ export default function Page() {
           : toTs(a.dataMovimentacao) - toTs(b.dataMovimentacao);
       });
     }
-    result = [...result].sort((a, b) => {
-      const aCon =
-        resolveMovementStatus(a.beneficiariosMovimentacao) === "concluido";
-      const bCon =
-        resolveMovementStatus(b.beneficiariosMovimentacao) === "concluido";
-      if (aCon === bCon) return 0;
-      return aCon ? 1 : -1;
-    });
     return result;
   }, [movements, search, sortOrder, sortDate, filterStatus]);
 
@@ -248,20 +239,15 @@ export default function Page() {
   const filteredUser = useMemo(() => {
     const q = search.toLowerCase();
     let result = userMovements.filter((m) => {
+      const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
       const matchSearch =
         !q ||
         m.nomeEmpresa.toLowerCase().includes(q) ||
         m.nomeBeneficiario.toLowerCase().includes(q);
-      const matchStatus =
-        !userFilterStatus || m.status?.toUpperCase() === userFilterStatus;
+      const matchStatus = userFilterStatus
+        ? m.status?.toUpperCase() === userFilterStatus
+        : !isConcluido;
       return matchSearch && matchStatus;
-    });
-    // Concluídos por último
-    result = [...result].sort((a, b) => {
-      const aCon = a.status?.toUpperCase() === "CONCLUIDO";
-      const bCon = b.status?.toUpperCase() === "CONCLUIDO";
-      if (aCon === bCon) return 0;
-      return aCon ? 1 : -1;
     });
     return result;
   }, [userMovements, search, userFilterStatus]);

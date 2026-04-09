@@ -74,6 +74,7 @@ export default function PreRegister() {
     const fd = new FormData(event.currentTarget);
     const email = fd.get("email-input");
 
+    setIsSubmitting(true);
     try {
       if (isAnalistaFlow) {
         await api.post("/auth/pre-register", {
@@ -92,6 +93,8 @@ export default function PreRegister() {
     } catch (err) {
       console.error(err);
       setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -337,22 +340,28 @@ export default function PreRegister() {
             </div>
             <button
               type="submit"
-              className="bg-(--azul) text-white w-full rounded-lg p-2 flex items-center justify-center gap-4 cursor-pointer transition-all duration-100 active:scale-95"
+              disabled={isSubmitting}
+              className="bg-(--azul) hover:bg-(--blue-button) text-white w-full rounded-lg p-2 flex items-center justify-center gap-2 cursor-pointer transition-all duration-100 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Cadastrar
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cadastrando...
+                </>
+              ) : "Cadastrar"}
             </button>
 
             {submitStatus === "success" && (
-              <p className="text-green-600 text-sm text-center font-medium">
-                Cadastro realizado com sucesso. O e-mail de ativacao foi
-                enviado.
-              </p>
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                Cadastro realizado com sucesso. O e-mail de ativação foi enviado.
+              </div>
             )}
             {submitStatus === "error" && (
-              <p className="text-red-500 text-sm text-center">
-                Nao foi possivel realizar o cadastro. Verifique os dados e tente
-                novamente.
-              </p>
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                <XCircle className="h-4 w-4 shrink-0" />
+                Não foi possível realizar o cadastro. Verifique os dados e tente novamente.
+              </div>
             )}
           </form>
           <p className="opacity-60">

@@ -1,6 +1,7 @@
 "use client";
 
 import { LogoPositivo } from "@/app/components/Logo/LogoPositivo";
+import { Input } from "@/app/components/ui/Input/Input";
 import { api } from "@/services/api";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -54,23 +55,13 @@ export default function PreRegister() {
               <label htmlFor="pwd-input" className="font-bold">
                 Senha:
               </label>
-              <input
-                id="pwd-input"
-                name="pwd-input"
-                type="password"
-                className="border border-gray-300 rounded-lg p-2 bg-white transition-all duration-100 shadow-md focus:scale-105 focus:border-(--azul)"
-              />
+              <Input id="pwd-input" type="password" />
             </div>
             <div className="grid gap-2">
               <label htmlFor="confirm-pwd-input" className="font-bold">
                 Confirmar Senha:
               </label>
-              <input
-                name="confirm-pwd-input"
-                id="confirm-pwd-input"
-                type="password"
-                className="border border-gray-300 bg-white rounded-lg p-2 cursor-pointer shadow-md focus:scale-105 transition-all duration-100"
-              />
+              <Input id="confirm-pwd-input" type="password" />
             </div>
             <button
               type="submit"

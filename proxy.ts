@@ -9,6 +9,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/companies": ["ADMIN"],
   "/teams": ["ADMIN"],
   "/dashboard": ["ADMIN", "USER"],
+  "/movements": ["ADMIN", "USER"],
 };
 
 export function proxy(request: NextRequest) {
@@ -37,5 +38,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/companies/:path*", "/teams/:path*", "/dashboard/:path*"],
+  matcher: ["/companies/:path*", "/teams/:path*", "/dashboard/:path*", "/movements/:path*"],
 };

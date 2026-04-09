@@ -4,6 +4,7 @@ import { MovementTypes } from "@/app/types/MovementTypes";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Clock,
   CreditCard,
   Files,
@@ -17,6 +18,9 @@ import {
   ArrowUpNarrowWide,
   UserMinus,
   UserPlus,
+  CheckCircle2,
+  Building2,
+  UsersRound,
 } from "lucide-react";
 import Link from "next/link";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
@@ -42,6 +46,7 @@ type UserMovementItem = {
   observacao: string;
   dataMovimentacao: string;
   status: string;
+  modalidade?: string;
 };
 
 const statusMap: Record<string, { label: string; className: string }> = {
@@ -143,6 +148,8 @@ export default function Page() {
   const [companies, setCompanies] = useState<
     { label: string; value: string }[]
   >([]);
+  const [totalTeams, setTotalTeams] = useState<number | null>(null);
+  const [companyCounts, setCompanyCounts] = useState<{ saude: number; dental: number }>({ saude: 0, dental: 0 });
   const [sortOrder, setSortOrder] = useState<SortOrder>("");
   const [sortDate, setSortDate] = useState<SortOrder>("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -155,6 +162,7 @@ export default function Page() {
 
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showConcluidos, setShowConcluidos] = useState(false);
 
   async function fetchAdminMovements(p: number) {
     const res = await api.get(`/movimentacao?page=${p}`);
@@ -178,26 +186,31 @@ export default function Page() {
         if (r === "ADMIN") {
           await Promise.all([
             fetchAdminMovements(0),
-            api.get("/empresas").then((res) =>
-              setCompanies(
-                res.data.map((c: any) => ({
-                  label: c.nome,
-                  value: c.idEmpresa,
-                })),
+            api.get("/empresas").then((res) => {
+              const data: any[] = res.data ?? [];
+              setCompanies(data.map((c) => ({ label: c.nome, value: c.idEmpresa })));
+              setCompanyCounts({
+                saude: data.filter((c) => c.modalidade?.toUpperCase() === "SAUDE").length,
+                dental: data.filter((c) => c.modalidade?.toUpperCase() === "DENTAL").length,
+              });
+            }),
+            api.get("/equipes").then((res) =>
+              setTotalTeams(
+                Array.isArray(res.data) ? res.data.length : (res.data?.totalElements ?? res.data?.content?.length ?? 0),
               ),
-            ),
+            ).catch(() => setTotalTeams(0)),
           ]);
         } else {
           await Promise.all([
             fetchUserMovements(),
-            api.get("/empresas/user").then((res) =>
-              setCompanies(
-                (res.data || []).map((c: any) => ({
-                  label: c.nome,
-                  value: c.idEmpresa,
-                })),
-              ),
-            ),
+            api.get("/empresas/user").then((res) => {
+              const data: any[] = res.data ?? [];
+              setCompanies(data.map((c) => ({ label: c.nome, value: c.idEmpresa })));
+              setCompanyCounts({
+                saude: data.filter((c) => c.modalidade?.toUpperCase() === "SAUDE").length,
+                dental: data.filter((c) => c.modalidade?.toUpperCase() === "DENTAL").length,
+              });
+            }),
           ]);
         }
       } catch (err) {
@@ -264,15 +277,16 @@ export default function Page() {
   const filteredAdmin = useMemo(() => {
     const q = search.toLowerCase();
     let result = movements.filter((m) => {
+      const status = resolveMovementStatus(m.beneficiariosMovimentacao);
       const matchSearch =
         !q ||
         m.nomeEmpresa.toLowerCase().includes(q) ||
         m.beneficiariosMovimentacao.some((b) =>
           b.nome.toLowerCase().includes(q),
         );
-      const matchStatus =
-        !filterStatus ||
-        resolveMovementStatus(m.beneficiariosMovimentacao) === filterStatus;
+      const matchStatus = filterStatus
+        ? status === filterStatus
+        : status !== "concluido";
       return matchSearch && matchStatus;
     });
     if (sortOrder === "asc")
@@ -296,6 +310,22 @@ export default function Page() {
     }
     return result;
   }, [movements, search, sortOrder, sortDate, filterStatus]);
+
+  const concludedAdmin = useMemo(() => {
+    const q = search.toLowerCase();
+    return movements.filter((m) => {
+      const matchSearch =
+        !q ||
+        m.nomeEmpresa.toLowerCase().includes(q) ||
+        m.beneficiariosMovimentacao.some((b) =>
+          b.nome.toLowerCase().includes(q),
+        );
+      return (
+        resolveMovementStatus(m.beneficiariosMovimentacao) === "concluido" &&
+        matchSearch
+      );
+    });
+  }, [movements, search]);
 
   // ── User ────────────────────────────────────────────────────────────────────
   const userStats = useMemo(
@@ -336,24 +366,29 @@ export default function Page() {
 
   const filteredUser = useMemo(() => {
     const q = search.toLowerCase();
-    let result = userMovements.filter((m) => {
+    return userMovements.filter((m) => {
+      const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
       const matchSearch =
         !q ||
         m.nomeEmpresa.toLowerCase().includes(q) ||
         m.nomeBeneficiario.toLowerCase().includes(q);
-      const matchStatus =
-        !userFilterStatus || m.status?.toUpperCase() === userFilterStatus;
+      const matchStatus = userFilterStatus
+        ? m.status?.toUpperCase() === userFilterStatus
+        : !isConcluido;
       return matchSearch && matchStatus;
     });
-    // Concluídos por último
-    result = [...result].sort((a, b) => {
-      const aCon = a.status?.toUpperCase() === "CONCLUIDO";
-      const bCon = b.status?.toUpperCase() === "CONCLUIDO";
-      if (aCon === bCon) return 0;
-      return aCon ? 1 : -1;
-    });
-    return result;
   }, [userMovements, search, userFilterStatus]);
+
+  const concludedUser = useMemo(() => {
+    const q = search.toLowerCase();
+    return userMovements.filter((m) => {
+      const matchSearch =
+        !q ||
+        m.nomeEmpresa.toLowerCase().includes(q) ||
+        m.nomeBeneficiario.toLowerCase().includes(q);
+      return m.status?.toUpperCase() === "CONCLUIDO" && matchSearch;
+    });
+  }, [userMovements, search]);
 
   const stats = role === "USER" ? userStats : adminStats;
   const hasFilters =
@@ -381,6 +416,70 @@ export default function Page() {
           <h2 className="opacity-60">
             Gerencie as movimentações do seu plano de saúde
           </h2>
+        </div>
+
+        <div className={`grid gap-4 grid-cols-2 ${role === "ADMIN" ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-sm/20 transition-shadow">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100">
+              <Building2 className="h-5 w-5 text-(--azul)" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Empresas</p>
+              <p className="text-2xl font-bold text-(--black)">
+                {isLoading ? "—" : companies.length}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-red-100 bg-red-50 shadow-red-300 shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/100 transition-shadow">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-red-100">
+              <Building2 className="h-5 w-5 text-(--azul)" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-red-600">Saúde</p>
+              <p className="text-2xl font-bold text-red-800">
+                {isLoading ? "—" : companyCounts.saude}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 shadow-blue-300 shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/100 transition-all">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-blue-100">
+              <Building2 className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-blue-600">Dental</p>
+              <p className="text-2xl font-bold text-blue-800">
+                {isLoading ? "—" : companyCounts.dental}
+              </p>
+            </div>
+          </div>
+
+          {role === "ADMIN" && (
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/20 transition-shadow">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
+                <UsersRound className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Equipes ativas</p>
+                <p className="text-2xl font-bold text-(--black)">
+                  {isLoading ? "—" : (totalTeams ?? "—")}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/20 transition-shadow">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 border border-green-100">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Concluídas</p>
+              <p className="text-2xl font-bold text-(--black)">
+                {isLoading ? "—" : (role === "ADMIN" ? concludedAdmin.length : concludedUser.length)}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -518,6 +617,11 @@ export default function Page() {
         </div>
 
         {/* ── Lista ── */}
+        {!isLoading && (filterStatus === "concluido" || userFilterStatus === "CONCLUIDO") && (
+          <p className="text-sm text-gray-500 italic -mb-2">
+            Exibindo apenas movimentações concluídas.
+          </p>
+        )}
         {isLoading ? (
           <p className="text-center text-2xl italic opacity-60 py-8">
             Carregando...
@@ -612,6 +716,89 @@ export default function Page() {
             )}
           </div>
         )}
+        {/* ── Concluídos ── */}
+        {!isLoading &&
+          filterStatus !== "concluido" &&
+          userFilterStatus !== "CONCLUIDO" && (
+            (() => {
+              const list = role === "USER" ? concludedUser : concludedAdmin;
+              if (list.length === 0) return null;
+              return (
+                <div className="rounded-2xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowConcluidos((p) => !p)}
+                    className="w-full flex items-center justify-between gap-3 px-5 py-4 cursor-pointer hover:bg-green-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                      <span className="font-semibold text-green-800">
+                        Concluídos
+                      </span>
+                      <span className="inline-flex items-center rounded-full border border-green-200 bg-white px-2 py-0.5 text-xs font-semibold text-green-700">
+                        {list.length}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 text-green-600 transition-transform duration-200 ${showConcluidos ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showConcluidos && (
+                    <div className="border-t border-green-200 p-4 sm:p-5">
+                      {role === "USER" ? (
+                        <ul className="grid gap-2">
+                          {(list as typeof concludedUser).map((m) => {
+                            const tipo = tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
+                            return (
+                              <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
+                                <Link
+                                  href={`/beneficiarios/${m.idBeneficiario}`}
+                                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-green-200 bg-white px-3 py-3 hover:border-green-300 hover:bg-green-50 transition-all duration-100"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {tipo && (
+                                      <div className={`shrink-0 ${tipo.className}`}>
+                                        <tipo.Icon className="h-4 w-4" />
+                                      </div>
+                                    )}
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-sm truncate">{m.nomeBeneficiario}</p>
+                                      <p className="text-xs text-gray-500 truncate">
+                                        {tipo?.label}{m.nomeEmpresa && <> &middot; {m.nomeEmpresa}</>}
+                                      </p>
+                                      <p className="text-xs text-gray-400">{parseDate(m.dataMovimentacao)}</p>
+                                    </div>
+                                  </div>
+                                  <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 shrink-0">
+                                    Concluído
+                                  </span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {(list as typeof concludedAdmin).map((movement, i) => (
+                            <MovementParentCard
+                              key={i}
+                              dataMovimentacao={movement.dataMovimentacao}
+                              id={movement.idMovimentacao}
+                              nomeEmpresa={movement.nomeEmpresa}
+                              observacao={movement.observacao}
+                              modalidade={movement.modalidade}
+                              beneficiarios={movement.beneficiariosMovimentacao}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          )}
       </div>
     </div>
   );
