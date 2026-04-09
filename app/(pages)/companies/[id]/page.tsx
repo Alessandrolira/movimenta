@@ -5,7 +5,14 @@ import { parseCnpj } from "@/app/utils/format";
 import { api } from "@/services/api";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Clock, Files, Layers, Users } from "lucide-react";
+import {
+  Building2,
+  Clock,
+  Files,
+  Layers,
+  RefreshCw,
+  Users,
+} from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
 import { DadosGeraisType } from "@/app/types/DadosGeraisType";
 import { IconType } from "react-icons";
@@ -23,6 +30,19 @@ export default function Page() {
   const [dadosGerais, setDadosGerais] = useState<DadosGeraisType>();
   const [isLoading, setIsLoading] = useState(true);
   const [dadosGraficos, setDadosGraficos] = useState<VariacaoVidasType[]>([]);
+  const [reativando, setReativando] = useState<string | null>(null);
+
+  async function reativarCadastro(idUsuario: string) {
+    setReativando(idUsuario);
+    try {
+      await api.post("/auth/reativar-cadastro", { idUsuario });
+      await getCompanies();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setReativando(null);
+    }
+  }
 
   interface modalideConfigProps {
     value: IconType;
@@ -275,14 +295,74 @@ export default function Page() {
             <div className="max-h-64 overflow-y-auto pr-1">
               <ul className="grid gap-2">
                 {company.acessos.map(
-                  (acesso: { email: string; status: string }, index) => (
-                    <li
-                      key={index}
-                      className="rounded-md border border-gray-200 bg-(--light-gray) px-3 py-2 text-sm break-all"
-                    >
-                      {acesso.email} - {acesso.status}
-                    </li>
-                  ),
+                  (
+                    acesso: {
+                      idUsuario: string;
+                      email: string;
+                      status: string;
+                    },
+                    index,
+                  ) => {
+                    const statusConfig: Record<
+                      string,
+                      { badge: string; label: string }
+                    > = {
+                      ATIVO: {
+                        badge: "bg-green-100 text-green-700 border-green-200",
+                        label: "Ativo",
+                      },
+                      PENDENTE: {
+                        badge:
+                          "bg-yellow-100 text-yellow-700 border-yellow-200",
+                        label: "Pendente",
+                      },
+                      CADASTRO_EXPIRADO: {
+                        badge: "bg-red-100 text-red-700 border-red-200",
+                        label: "Expirado",
+                      },
+                    };
+                    const config = statusConfig[acesso.status] ?? {
+                      badge: "bg-gray-100 text-gray-600 border-gray-200",
+                      label: acesso.status,
+                    };
+                    const isExpired = acesso.status === "CADASTRO_EXPIRADO";
+                    const isReativando = reativando === acesso.idUsuario;
+                    return (
+                      <li
+                        key={index}
+                        className="flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-(--light-gray) px-3 py-2 text-sm"
+                      >
+                        <span className="break-all text-gray-700">
+                          {acesso.email}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span
+                            className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${config.badge}`}
+                          >
+                            {config.label}
+                          </span>
+                          {isExpired && (
+                            <div className="relative group/tip">
+                              <button
+                                onClick={() => reativarCadastro(acesso.idUsuario)}
+                                disabled={isReativando}
+                                className="flex items-center justify-center rounded-full p-1 text-orange-500 hover:bg-orange-50 hover:text-orange-600 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+                              >
+                                <RefreshCw
+                                  className={`h-3.5 w-3.5 ${isReativando ? "animate-spin" : ""}`}
+                                />
+                              </button>
+                              <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden group-hover/tip:flex">
+                                <span className="whitespace-nowrap rounded-lg bg-(--azul) px-2.5 py-1.5 text-xs font-medium text-white shadow-md">
+                                  Reativar cadastro por 8h
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  },
                 )}
               </ul>
             </div>

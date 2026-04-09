@@ -28,8 +28,7 @@ api.interceptors.response.use(
   },
   (error) => {
     // Se o servidor retornar erro (ex: 401, 404, 500)
-    if (error.response?.status === 401) {
-      // Exemplo: Token expirado. Limpamos o lixo e mandamos pro login.
+    if (error.response?.status === 401 || error.response?.status === 403) {
       deleteAuthCookie("token");
       window.location.href = "/login";
     }

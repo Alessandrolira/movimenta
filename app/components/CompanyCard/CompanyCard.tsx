@@ -13,6 +13,7 @@ interface CompanyProps {
   modalidade: string;
   operadora: string;
   acessos: {
+    idUsuario: string;
     email: string;
     status: string;
   }[];
@@ -127,14 +128,44 @@ export const CompanyCard = ({
               <p className="text-sm italic text-gray-400">Nenhum login</p>
             ) : (
               <ul className="flex flex-col gap-1.5">
-                {acessos.map((acesso, index) => (
-                  <li
-                    key={index}
-                    className="rounded-md border border-gray-100 bg-white px-2.5 py-1.5 text-xs text-gray-700 break-all shadow-sm"
-                  >
-                    {acesso.email} - {acesso.status}
-                  </li>
-                ))}
+                {acessos.map((acesso, index) => {
+                  const statusConfig: Record<
+                    string,
+                    { badge: string; label: string }
+                  > = {
+                    ATIVO: {
+                      badge: "bg-green-100 text-green-700 border-green-200",
+                      label: "Ativo",
+                    },
+                    PENDENTE: {
+                      badge: "bg-yellow-100 text-yellow-700 border-yellow-200",
+                      label: "Pendente",
+                    },
+                    CADASTRO_EXPIRADO: {
+                      badge: "bg-red-100 text-red-700 border-red-200",
+                      label: "Expirado",
+                    },
+                  };
+                  const config = statusConfig[acesso.status] ?? {
+                    badge: "bg-gray-100 text-gray-600 border-gray-200",
+                    label: acesso.status,
+                  };
+                  return (
+                    <li
+                      key={index}
+                      className="flex items-center justify-between gap-2 rounded-md border border-gray-100 bg-white px-2.5 py-1.5 text-xs shadow-sm"
+                    >
+                      <span className="break-all text-gray-700">
+                        {acesso.email}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full border px-2 py-0.5 font-semibold ${config.badge}`}
+                      >
+                        {config.label}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

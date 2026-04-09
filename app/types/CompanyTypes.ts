@@ -1,4 +1,5 @@
 export type AcessoType = {
+  idUsuario: string;
   email: string;
   status: string;
 };
