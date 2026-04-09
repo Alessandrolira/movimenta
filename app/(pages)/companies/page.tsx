@@ -26,7 +26,7 @@ export default function Page() {
       try {
         setIsLoading(true);
         const res = await api.get("/empresas");
-        setCompanies(res.data);
+        setCompanies(res.data || []);
       } catch (err) {
         console.error(err);
       } finally {

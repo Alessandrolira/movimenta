@@ -28,5 +28,5 @@ type Endereco = {
 
 type Documentos = {
   documentosBeneficiario: string[];
-  documentoContratacao: string;
+  documentosEmpresa: string[];
 };

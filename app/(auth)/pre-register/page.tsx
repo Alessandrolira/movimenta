@@ -5,15 +5,16 @@ import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { verifyConnected } from "@/app/utils/verifyConnected";
 import { api } from "@/services/api";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { UserCog, TriangleAlert } from "lucide-react";
+import { UserCog, TriangleAlert, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Input } from "@/app/components/ui/Input/Input";
 
 type TeamStatus = "loading" | "valid" | "invalid";
 type SubmitStatus = "idle" | "success" | "error";
 
 export default function PreRegister() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const idEmpresa = searchParams.get("idEmpresa");
   const idEquipe = searchParams.get("idEquipe");
@@ -30,6 +31,7 @@ export default function PreRegister() {
     isAnalistaFlow ? "loading" : "valid",
   );
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     verifyConnected(window.location.href);
@@ -100,6 +102,7 @@ export default function PreRegister() {
     const fd = new FormData(event.currentTarget);
     const email = fd.get("email-input");
 
+    setIsSubmitting(true);
     try {
       if (isAnalistaFlow) {
         await api.post("/analista", {
@@ -116,9 +119,13 @@ export default function PreRegister() {
         });
       }
       setSubmitStatus("success");
+      setTimeout(() => router.back(), 1000);
     } catch (err) {
       console.error(err);
       setSubmitStatus("error");
+      setTimeout(() => router.back(), 1000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,22 +252,28 @@ export default function PreRegister() {
 
                   <button
                     type="submit"
-                    className="bg-(--azul) hover:bg-(--blue-button) text-white w-full rounded-lg p-2 flex items-center justify-center gap-4 cursor-pointer transition-all duration-100 active:scale-95"
+                    disabled={isSubmitting}
+                    className="bg-(--azul) hover:bg-(--blue-button) text-white w-full rounded-lg p-2 flex items-center justify-center gap-2 cursor-pointer transition-all duration-100 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Cadastrar analista
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Cadastrando...
+                      </>
+                    ) : "Cadastrar analista"}
                   </button>
 
                   {submitStatus === "success" && (
-                    <p className="text-green-600 text-sm text-center font-medium">
-                      Analista cadastrado com sucesso. O e-mail de ativacao foi
-                      enviado.
-                    </p>
+                    <div className="flex items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      Analista cadastrado com sucesso! Redirecionando...
+                    </div>
                   )}
                   {submitStatus === "error" && (
-                    <p className="text-red-500 text-sm text-center">
-                      Nao foi possivel cadastrar o analista. Verifique os dados
-                      e tente novamente.
-                    </p>
+                    <div className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                      <XCircle className="h-4 w-4 shrink-0" />
+                      Não foi possível cadastrar. Redirecionando...
+                    </div>
                   )}
                 </form>
 

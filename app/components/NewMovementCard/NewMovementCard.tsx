@@ -8,17 +8,18 @@ import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
 import { api } from "@/services/api";
 import SendMovement from "@/services/sendMovement";
 import { onlyDigits } from "@/app/utils/format";
-import { useRouter } from "next/navigation";
 
 interface NewMovementProps {
   companies: { label: string; value: string }[];
   onClick: () => void;
+  onSuccess?: () => void;
   defaultCompany?: string;
 }
 
 export default function NewMovementCard({
   onClick,
   companies,
+  onSuccess,
   defaultCompany,
 }: NewMovementProps) {
   const [companySelect, setCompanySelect] = useState(defaultCompany ?? "Seleciona a empresa");
@@ -29,7 +30,6 @@ export default function NewMovementCard({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const router = useRouter();
 
   const addBenef = () => {
     const newBenef: BeneficiaryTypes = {
@@ -48,7 +48,7 @@ export default function NewMovementCard({
       dependencia: "TITULAR",
       dadosComplementares: {
         documentosBeneficiario: [],
-        documentoContratacao: "",
+        documentosEmpresa: [],
       },
       nomeTitular: "",
       planoAtual: "",
@@ -192,8 +192,8 @@ export default function NewMovementCard({
             return {
               ...benef,
               dadosComplementares: {
-                "@type": benef.tipoMovimentacao,
-                ...benef.dadosComplementares,
+                documentosBeneficiario: [],
+                documentosEmpresa: [],
               },
             };
           }
@@ -219,14 +219,13 @@ export default function NewMovementCard({
           };
           const pessoaisCount = files.pessoais.length;
           const documentosBeneficiario = filePaths.slice(0, pessoaisCount);
-          const documentoContratacao = filePaths[pessoaisCount] ?? "";
+          const documentosEmpresa = files.vinculo ? [filePaths[pessoaisCount]] : [];
 
           return {
             ...benef,
             dadosComplementares: {
-              "@type": benef.tipoMovimentacao,
               documentosBeneficiario,
-              documentoContratacao,
+              documentosEmpresa,
             },
           };
         }),
@@ -244,7 +243,7 @@ export default function NewMovementCard({
       setSuccess(true);
       setTimeout(() => {
         onClick();
-        router.refresh();
+        onSuccess?.();
       }, 1800);
     } catch (err: any) {
       const msg =

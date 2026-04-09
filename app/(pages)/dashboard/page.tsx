@@ -35,6 +35,7 @@ type UserMovementItem = {
   nomeEmpresa: string;
   cnpjEmpresa: string;
   idMovimentacao: string;
+  idBeneficiario: string;
   nomeBeneficiario: string;
   tipoMovimentacao: string;
   observacao: string;
@@ -71,19 +72,31 @@ const statusMap: Record<string, { label: string; className: string }> = {
 
 const tipoMap: Record<
   string,
-  { label: string; Icon: React.ElementType; iconClass: string }
+  { label: string; Icon: React.ElementType; className: string }
 > = {
-  INCLUSAO: { label: "Inclusão", Icon: UserPlus, iconClass: "text-green-500" },
-  EXCLUSAO: { label: "Exclusão", Icon: UserMinus, iconClass: "text-red-500" },
+  INCLUSAO: {
+    label: "Inclusão",
+    Icon: UserPlus,
+    className:
+      "bg-green-50 text-(--green-icon) border rounded-lg border-green-200 p-2",
+  },
+  EXCLUSAO: {
+    label: "Exclusão",
+    Icon: UserMinus,
+    className:
+      "text-(--red-icon) bg-red-50 border rounded-lg border-red-200 p-2",
+  },
   ALTERACAO_DE_DADOS_CADASTRAIS: {
     label: "Alteração",
     Icon: RefreshCw,
-    iconClass: "text-orange-500",
+    className:
+      "text-(--blue-icon) bg-blue-50 border rounded-lg border-blue-200 p-2",
   },
   SEGUNDA_VIA_CARTEIRINHA: {
     label: "2ª Via",
     Icon: CreditCard,
-    iconClass: "text-purple-500",
+    className:
+      "text-purple-500 bg-purple-50 border rounded-lg border-purple-200 p-2",
   },
 };
 
@@ -120,32 +133,29 @@ export default function Page() {
             api
               .get("/movimentacao")
               .then((res) => setMovements(res.data || [])),
-            api
-              .get("/empresas")
-              .then((res) =>
-                setCompanies(
-                  res.data.map((c: any) => ({
-                    label: c.nome,
-                    value: c.idEmpresa,
-                  })),
-                ),
+            api.get("/empresas").then((res) =>
+              setCompanies(
+                res.data.map((c: any) => ({
+                  label: c.nome,
+                  value: c.idEmpresa,
+                })),
               ),
+            ),
           ]);
         } else {
           await Promise.all([
-            api
-              .get("/movimentacao/user")
-              .then((res) => setUserMovements(res.data || [])),
-            api
-              .get("/empresas/user")
-              .then((res) =>
-                setCompanies(
-                  (res.data || []).map((c: any) => ({
-                    label: c.nome,
-                    value: c.idEmpresa,
-                  })),
-                ),
+            api.get("/movimentacao/user").then((res) => {
+              setUserMovements(res.data || []);
+              console.log(res.data);
+            }),
+            api.get("/empresas/user").then((res) =>
+              setCompanies(
+                (res.data || []).map((c: any) => ({
+                  label: c.nome,
+                  value: c.idEmpresa,
+                })),
               ),
+            ),
           ]);
         }
       } catch (err) {
@@ -301,6 +311,17 @@ export default function Page() {
         <NewMovementCard
           companies={companies}
           onClick={() => setToggleNewMovement(false)}
+          onSuccess={() => {
+            if (role === "ADMIN") {
+              api
+                .get("/movimentacao")
+                .then((res) => setMovements(res.data || []));
+            } else {
+              api
+                .get("/movimentacao/user")
+                .then((res) => setUserMovements(res.data || []));
+            }
+          }}
         />
       )}
 
@@ -470,38 +491,33 @@ export default function Page() {
                 return (
                   <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
                     <Link
-                      href={`/movements/${m.idMovimentacao}`}
-                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border px-4 py-3 transition-all duration-100 inset-shadow-sm ${
+                      href={`/beneficiarios/${m.idBeneficiario}`}
+                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border px-3 py-3 transition-all duration-100 inset-shadow-sm ${
                         isConcluido
                           ? "border-green-200 bg-green-50 hover:border-green-300 hover:bg-green-100"
-                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                          : "border-gray-200 bg-(--light-gray) hover:border-gray-300 hover:bg-gray-50"
                       }`}
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          {tipo && (
-                            <tipo.Icon
-                              className={`h-4 w-4 shrink-0 ${tipo.iconClass}`}
-                            />
-                          )}
+                      <div className="flex items-center gap-3 min-w-0">
+                        {tipo && (
+                          <div className={`shrink-0 ${tipo.className}`}>
+                            <tipo.Icon className="h-4 w-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">
                             {m.nomeBeneficiario}
                           </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {tipo?.label}
+                            {m.nomeEmpresa && <> &middot; {m.nomeEmpresa}</>}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {parseDate(m.dataMovimentacao)}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500 truncate">
-                          {m.nomeEmpresa}
-                          {m.observacao && <> &middot; {m.observacao}</>}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {parseDate(m.dataMovimentacao)}
-                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2 shrink-0">
-                        {tipo && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                            {tipo.label}
-                          </span>
-                        )}
                         <span
                           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${st.className}`}
                         >
