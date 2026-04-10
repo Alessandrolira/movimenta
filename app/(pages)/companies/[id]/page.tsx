@@ -6,6 +6,7 @@ import { api } from "@/services/api";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowRightLeft,
   Building2,
   Clock,
   CreditCard,
@@ -23,6 +24,7 @@ import { GiHealthNormal } from "react-icons/gi";
 import { FaTooth } from "react-icons/fa";
 import Link from "next/link";
 import { FaUserPlus } from "react-icons/fa";
+import TransferirAnalistaModal from "@/app/components/TransferirAnalistaModal/TransferirAnalistaModal";
 import { VariacaoVidasType } from "@/app/types/VariacaoVidasType";
 
 export default function Page() {
@@ -32,7 +34,9 @@ export default function Page() {
   const [company, setCompany] = useState<CompanyTypes>();
   const [dadosGerais, setDadosGerais] = useState<DadosGeraisType>();
   const [isLoading, setIsLoading] = useState(true);
-  const [dadosGraficos, setDadosGraficos] = useState<VariacaoVidasType[]>([]);
+  const [dadosGraficos, setDadosGraficos] = useState<
+    { label: string; totalVidas: number }[]
+  >([]);
   const [reativando, setReativando] = useState<string | null>(null);
 
   async function reativarCadastro(idUsuario: string) {
@@ -74,8 +78,8 @@ export default function Page() {
 
   async function getDadosGraficos() {
     try {
-      const res = await api.get(`/movimentacao/variacaoVidas/${idEmpresa}`);
-      setDadosGraficos(res.data);
+      const res = await api.get(`/empresas/${idEmpresa}/evolucao-vidas`);
+      setDadosGraficos(res.data.evolucao ?? []);
     } catch (err) {
       console.error(err);
     }
@@ -97,8 +101,6 @@ export default function Page() {
 
     loadPageData();
   }, []);
-
-  console.log("Dados para gráfico de variação de vidas:", dadosGraficos);
 
   const stats = [
     {
@@ -158,47 +160,14 @@ export default function Page() {
   const ModalidadeIcon = modalidadeConfig.value;
 
   const barChartData = useMemo(() => {
-    const historicoPorDia = dadosGraficos
-      .map((item) => ({
-        date: new Date(item.data),
-        value: Number(item.quantidadeVidas),
-      }))
-      .filter(
-        (item) =>
-          !Number.isNaN(item.date.getTime()) &&
-          Number.isFinite(item.value) &&
-          item.value > 0,
-      )
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .reduce((acc, item) => {
-        const label = item.date.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-        });
-
-        acc.set(label, item.value);
-        return acc;
-      }, new Map<string, number>());
-
-    const firstBar = {
-      label: "Inicial",
-      value: company?.qtdVidasAtivas ?? 0,
-      isInitial: true,
-    };
-
-    const historico = Array.from(historicoPorDia.entries()).map(
-      ([label, value]) => ({
-        label,
-        value,
-        isInitial: false,
-      }),
-    );
-
-    const series = [firstBar, ...historico];
+    const series = dadosGraficos.map((item, index) => ({
+      label: item.label,
+      value: item.totalVidas,
+      isInitial: index === 0,
+    }));
     const maxValue = Math.max(...series.map((item) => item.value), 1);
-
     return { series, maxValue };
-  }, [dadosGraficos, company?.qtdVidasAtivas]);
+  }, [dadosGraficos]);
 
   return (
     <div className="space-y-8 p-4 sm:p-6 lg:p-8">
@@ -423,7 +392,9 @@ export default function Page() {
                                 ? "bg-(--azul)"
                                 : "bg-(--blue-icon)"
                             }`}
-                            style={{ height: `${Math.max(heightPercent, 4)}%` }}
+                            style={{
+                              height: `${Math.max(heightPercent, 4)}%`,
+                            }}
                             title={`${item.label}: ${item.value} vidas`}
                           />
                         </div>
@@ -453,6 +424,7 @@ export default function Page() {
           )}
         </div>
       </div>
+
       <div className="rounded-2xl border border-gray-200 bg-white shadow-md p-4 sm:p-6 space-y-4">
         <div>
           <p className="text-2xl font-semibold tracking-wide">Movimentações</p>

@@ -80,7 +80,6 @@ const statusOptions = [
     hover: "hover:bg-green-50 hover:border-green-300 hover:text-green-600",
   },
 ];
-import StatCard from "@/app/components/StatCard/StatCard";
 import { formatCPF, parseDate, resolveMovementStatus } from "@/app/utils/format";
 import { GiHealthNormal } from "react-icons/gi";
 import { FaTooth } from "react-icons/fa";
@@ -164,6 +163,12 @@ export default function Page() {
   const [movement, setMovement] = useState<MovementTypes | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [emailToast, setEmailToast] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [todosConcluidosModal, setTodosConcluidosModal] = useState(false);
+  const [feedbackPendente, setFeedbackPendente] = useState(false);
   const [declinioText, setDeclinioText] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailsCache, setDetailsCache] = useState<Record<string, BeneficiarioDetail>>({});
@@ -209,15 +214,52 @@ export default function Page() {
           ),
         };
       });
-      if (newStatus !== "DECLINIO") {
-        setDeclinioText((prev) => ({ ...prev, [idBeneficiario]: "" }));
-      }
+      setDeclinioText((prev) => ({ ...prev, [idBeneficiario]: "" }));
     } catch (err) {
       console.error("Erro ao atualizar status:", err);
     } finally {
       setUpdatingId(null);
     }
   };
+
+  const handleConfirmarComEmail = async (
+    idBeneficiario: string,
+    novoStatus: string,
+  ) => {
+    setSendingId(idBeneficiario);
+    try {
+      await api.patch(`/movimentacao/alterStatus/${idBeneficiario}`, {
+        novoStatus,
+        descricaoDevolutivaOperadora: declinioText[idBeneficiario] ?? "",
+      });
+      setMovement((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          beneficiariosMovimentacao: prev.beneficiariosMovimentacao.map((b) =>
+            b.idBeneficiario === idBeneficiario
+              ? { ...b, status: novoStatus }
+              : b,
+          ),
+        };
+      });
+      setDeclinioText((prev) => ({ ...prev, [idBeneficiario]: "" }));
+      setEmailToast(true);
+      setTimeout(() => setEmailToast(false), 3500);
+    } catch (err) {
+      console.error("Erro ao enviar:", err);
+    } finally {
+      setSendingId(null);
+    }
+  };
+  useEffect(() => {
+    if (isLoading) return;
+    const lista = movement?.beneficiariosMovimentacao ?? [];
+    if (lista.length > 0 && lista.every((b) => b.status?.toUpperCase() === "CONCLUIDO")) {
+      setTodosConcluidosModal(true);
+    }
+  }, [movement, isLoading]);
+
   useEffect(() => {
     async function load() {
       try {
@@ -233,6 +275,23 @@ export default function Page() {
     load();
   }, [id]);
 
+  async function handleEnviarFeedback() {
+    setSendingFeedback(true);
+    try {
+      await api.post("/movimentacao/enviarFeedBackMovimentacao", {
+        idMovimentacao: id,
+      });
+      setFeedbackModal(false);
+      setFeedbackPendente(false);
+      setEmailToast(true);
+      setTimeout(() => setEmailToast(false), 3500);
+    } catch (err) {
+      console.error("Erro ao enviar feedback:", err);
+    } finally {
+      setSendingFeedback(false);
+    }
+  }
+
   const beneficiarios = movement?.beneficiariosMovimentacao ?? [];
   const overallStatus = resolveMovementStatus(beneficiarios);
   const modalidade = modalidadeMap[movement?.modalidade ?? ""] ?? null;
@@ -243,14 +302,14 @@ export default function Page() {
       value: beneficiarios.filter((b) => b.status?.toLowerCase() === "pendente")
         .length,
       icon: Clock,
-      color: "orange-icon",
+      colorStyle: "var(--orange-icon)",
     },
     {
       label: "Em Análise",
       value: beneficiarios.filter((b) => b.status?.toLowerCase() === "analise")
         .length,
       icon: Search,
-      color: "blue-icon",
+      colorStyle: "var(--blue-icon)",
     },
     {
       label: "Enviados",
@@ -258,7 +317,7 @@ export default function Page() {
         (b) => b.status?.toLowerCase() === "enviado_operadora",
       ).length,
       icon: Send,
-      color: "indigo-icon",
+      colorStyle: "var(--indigo-icon)",
     },
     {
       label: "Pend. Operadora",
@@ -266,14 +325,14 @@ export default function Page() {
         (b) => b.status?.toLowerCase() === "pendente_operadora",
       ).length,
       icon: AlertCircle,
-      color: "yellow-icon",
+      colorStyle: "var(--yellow-icon)",
     },
     {
       label: "Declínio",
       value: beneficiarios.filter((b) => b.status?.toLowerCase() === "declinio")
         .length,
       icon: X,
-      color: "red-icon",
+      colorStyle: "var(--red-icon)",
     },
     {
       label: "Concluídos",
@@ -281,7 +340,7 @@ export default function Page() {
         (b) => b.status?.toLowerCase() === "concluido",
       ).length,
       icon: CheckCircle2,
-      color: "green-icon",
+      colorStyle: "var(--green-icon)",
     },
   ];
 
@@ -289,10 +348,13 @@ export default function Page() {
 
   return (
     <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      {emailToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border bg-green-50 border-green-200 text-green-700 px-4 py-3 shadow-lg text-sm font-medium">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          Email enviado com sucesso.
+        </div>
+      )}
       {/* Hero card */}
-      <h1 className="font-bold text-3xl flex items-center gap-2">
-        <Users className="text-(--blue-icon)"/> {beneficiarios.length}
-      </h1>
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-md sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3 min-w-0">
@@ -338,37 +400,65 @@ export default function Page() {
             </div>
           </div>
 
-          {movement?.observacao && (
-            <div className="rounded-xl border border-gray-200 bg-(--light-gray) px-4 py-3 lg:min-w-64 lg:max-w-80 inset-shadow-sm/20">
-              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">
-                Observação
-              </p>
-              <p className="text-sm text-gray-700">{movement.observacao}</p>
+          <div className="rounded-xl border border-gray-200 bg-(--light-gray) px-4 py-3 min-w-52 inset-shadow-sm/20">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
+              Beneficiários
+            </p>
+            <p className="text-3xl font-bold text-(--azul)">
+              {beneficiarios.length}
+            </p>
+            <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+              <Users className="h-4 w-4 text-(--blue-icon)" />
+              <span>Total nesta movimentação</span>
             </div>
-          )}
+            <div className="mt-3 flex items-center gap-2 flex-wrap border-t border-gray-200 pt-3">
+              {stats.map((stat, i) => (
+                <div key={i} className="relative group">
+                  <div className="flex items-center justify-center rounded-lg p-1.5 bg-white border border-gray-200" style={{ color: stat.colorStyle }}>
+                    <stat.icon className="h-4 w-4" />
+                    {stat.value > 0 && (
+                      <span className="ml-1 text-xs font-semibold">{stat.value}</span>
+                    )}
+                  </div>
+                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded-md bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    {stat.label}: {stat.value}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats.map((stat, i) => (
-          <StatCard
-            key={i}
-            label={stat.label}
-            value={stat.value}
-            icon={stat.icon}
-            color={stat.color}
-          />
-        ))}
-      </div>
+      {movement?.observacao && (
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-md p-4 sm:p-6">
+          <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Observação</p>
+          <p className="text-sm text-gray-700">{movement.observacao}</p>
+        </div>
+      )}
 
       {/* Beneficiários */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-md p-4 sm:p-6 space-y-4">
-        <div>
-          <p className="text-2xl font-semibold tracking-wide">Beneficiários</p>
-          <p className="text-sm text-gray-500">
-            {beneficiarios.length} beneficiário(s) nesta movimentação
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-2xl font-semibold tracking-wide">Beneficiários</p>
+            <p className="text-sm text-gray-500">
+              {beneficiarios.length} beneficiário(s) nesta movimentação
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedbackModal(true)}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all cursor-pointer ${
+              feedbackPendente
+                ? "bg-green-500 hover:bg-green-600 text-white ring-2 ring-green-300 ring-offset-2 animate-pulse"
+                : "bg-(--azul) hover:bg-(--blue-icon) text-white"
+            }`}
+          >
+            <Send className="h-4 w-4" />
+            Enviar feedback ao cliente
+          </button>
         </div>
 
         {isLoading ? (
@@ -426,7 +516,7 @@ export default function Page() {
                               type="button"
                               disabled={isUpdating}
                               onClick={() => {
-                                if (opt.value === "PENDENTE_OPERADORA") {
+                                if (opt.value === "PENDENTE_OPERADORA" || opt.value === "DECLINIO") {
                                   setDeclinioText((prev) => ({
                                     ...prev,
                                     [b.idBeneficiario]:
@@ -443,7 +533,7 @@ export default function Page() {
                                             b.idBeneficiario
                                               ? {
                                                   ...ben,
-                                                  status: "PENDENTE_OPERADORA",
+                                                  status: opt.value,
                                                 }
                                               : ben,
                                         ),
@@ -535,17 +625,45 @@ export default function Page() {
                           type="button"
                           disabled={
                             !declinioText[b.idBeneficiario]?.trim() ||
-                            updatingId === b.idBeneficiario
+                            sendingId === b.idBeneficiario
                           }
-                          onClick={() =>
-                            handleStatusChange(
-                              b.idBeneficiario,
-                              "PENDENTE_OPERADORA",
-                              declinioText[b.idBeneficiario],
-                            )
-                          }
-                          className="rounded-xl border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-medium text-yellow-700 hover:bg-yellow-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          onClick={() => handleConfirmarComEmail(b.idBeneficiario, "PENDENTE_OPERADORA")}
+                          className="flex items-center gap-1.5 rounded-xl border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-medium text-yellow-700 hover:bg-yellow-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
+                          {sendingId === b.idBeneficiario ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                          Confirmar
+                        </button>
+                      </div>
+                    )}
+
+                    {b.status?.toUpperCase() === "DECLINIO" && (
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          placeholder="Informe o motivo do declínio para o cliente..."
+                          value={declinioText[b.idBeneficiario] ?? ""}
+                          onChange={(e) =>
+                            setDeclinioText((prev) => ({
+                              ...prev,
+                              [b.idBeneficiario]: e.target.value,
+                            }))
+                          }
+                          className="flex-1 border border-red-200 rounded-xl px-4 py-2 text-sm bg-white focus:outline-none focus:border-red-400 transition-all"
+                        />
+                        <button
+                          type="button"
+                          disabled={
+                            !declinioText[b.idBeneficiario]?.trim() ||
+                            sendingId === b.idBeneficiario
+                          }
+                          onClick={() => handleConfirmarComEmail(b.idBeneficiario, "DECLINIO")}
+                          className="flex items-center gap-1.5 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          {sendingId === b.idBeneficiario ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
                           Confirmar
                         </button>
                       </div>
@@ -561,6 +679,102 @@ export default function Page() {
           </p>
         )}
       </div>
+
+      {todosConcluidosModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <h2 className="text-lg font-semibold">Movimentação concluída</h2>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-2">
+              <p className="text-sm text-gray-700 font-medium">
+                Todos os beneficiários foram concluídos.
+              </p>
+              <p className="text-sm text-gray-600">
+                É importante enviar o feedback completo da movimentação ao cliente para informá-lo sobre a conclusão. Deseja enviar agora?
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                onClick={() => {
+                  setTodosConcluidosModal(false);
+                  setFeedbackPendente(true);
+                }}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Agora não
+              </button>
+              <button
+                onClick={() => {
+                  setTodosConcluidosModal(false);
+                  setFeedbackModal(true);
+                }}
+                className="flex items-center gap-2 rounded-lg bg-green-500 hover:bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors cursor-pointer"
+              >
+                <Send className="h-4 w-4" />
+                Enviar agora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {feedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <Send className="h-5 w-5 text-(--azul)" />
+                <h2 className="text-lg font-semibold">Enviar feedback</h2>
+              </div>
+              <button
+                onClick={() => !sendingFeedback && setFeedbackModal(false)}
+                disabled={sendingFeedback}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600">
+                O status atual de{" "}
+                <span className="font-semibold text-gray-900">
+                  todos os beneficiários
+                </span>{" "}
+                desta movimentação será enviado por email ao cliente que fez a solicitação. Deseja continuar?
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                onClick={() => setFeedbackModal(false)}
+                disabled={sendingFeedback}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEnviarFeedback}
+                disabled={sendingFeedback}
+                className="flex items-center gap-2 rounded-lg bg-(--azul) px-4 py-2 text-sm font-medium text-white hover:bg-(--blue-icon) transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingFeedback ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {sendingFeedback ? "Enviando..." : "Confirmar envio"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

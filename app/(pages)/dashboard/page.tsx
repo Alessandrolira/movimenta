@@ -19,8 +19,6 @@ import {
   UserMinus,
   UserPlus,
   CheckCircle2,
-  Building2,
-  UsersRound,
 } from "lucide-react";
 import Link from "next/link";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
@@ -148,9 +146,7 @@ export default function Page() {
   const [companies, setCompanies] = useState<
     { label: string; value: string }[]
   >([]);
-  const [totalTeams, setTotalTeams] = useState<number | null>(null);
-  const [companyCounts, setCompanyCounts] = useState<{ saude: number; dental: number }>({ saude: 0, dental: 0 });
-  const [sortOrder, setSortOrder] = useState<SortOrder>("");
+const [sortOrder, setSortOrder] = useState<SortOrder>("");
   const [sortDate, setSortDate] = useState<SortOrder>("");
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(0);
@@ -159,6 +155,8 @@ export default function Page() {
   // User state
   const [userMovements, setUserMovements] = useState<UserMovementItem[]>([]);
   const [userFilterStatus, setUserFilterStatus] = useState("");
+  const [userPage, setUserPage] = useState(0);
+  const USER_PAGE_SIZE = 10;
 
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -189,16 +187,7 @@ export default function Page() {
             api.get("/empresas").then((res) => {
               const data: any[] = res.data ?? [];
               setCompanies(data.map((c) => ({ label: c.nome, value: c.idEmpresa })));
-              setCompanyCounts({
-                saude: data.filter((c) => c.modalidade?.toUpperCase() === "SAUDE").length,
-                dental: data.filter((c) => c.modalidade?.toUpperCase() === "DENTAL").length,
-              });
             }),
-            api.get("/equipes").then((res) =>
-              setTotalTeams(
-                Array.isArray(res.data) ? res.data.length : (res.data?.totalElements ?? res.data?.content?.length ?? 0),
-              ),
-            ).catch(() => setTotalTeams(0)),
           ]);
         } else {
           await Promise.all([
@@ -206,10 +195,6 @@ export default function Page() {
             api.get("/empresas/user").then((res) => {
               const data: any[] = res.data ?? [];
               setCompanies(data.map((c) => ({ label: c.nome, value: c.idEmpresa })));
-              setCompanyCounts({
-                saude: data.filter((c) => c.modalidade?.toUpperCase() === "SAUDE").length,
-                dental: data.filter((c) => c.modalidade?.toUpperCase() === "DENTAL").length,
-              });
             }),
           ]);
         }
@@ -364,7 +349,7 @@ export default function Page() {
     [userMovements],
   );
 
-  const filteredUser = useMemo(() => {
+  const filteredUserAll = useMemo(() => {
     const q = search.toLowerCase();
     return userMovements.filter((m) => {
       const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
@@ -378,6 +363,20 @@ export default function Page() {
       return matchSearch && matchStatus;
     });
   }, [userMovements, search, userFilterStatus]);
+
+  const userTotalPages = Math.max(
+    1,
+    Math.ceil(filteredUserAll.length / USER_PAGE_SIZE),
+  );
+
+  const filteredUser = useMemo(
+    () =>
+      filteredUserAll.slice(
+        userPage * USER_PAGE_SIZE,
+        (userPage + 1) * USER_PAGE_SIZE,
+      ),
+    [filteredUserAll, userPage],
+  );
 
   const concludedUser = useMemo(() => {
     const q = search.toLowerCase();
@@ -418,71 +417,7 @@ export default function Page() {
           </h2>
         </div>
 
-        <div className={`grid gap-4 grid-cols-2 ${role === "ADMIN" ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-sm/20 transition-shadow">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100">
-              <Building2 className="h-5 w-5 text-(--azul)" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">Empresas</p>
-              <p className="text-2xl font-bold text-(--black)">
-                {isLoading ? "—" : companies.length}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-red-100 bg-red-50 shadow-red-300 shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/100 transition-shadow">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-red-100">
-              <Building2 className="h-5 w-5 text-(--azul)" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-red-600">Saúde</p>
-              <p className="text-2xl font-bold text-red-800">
-                {isLoading ? "—" : companyCounts.saude}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 shadow-blue-300 shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/100 transition-all">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-blue-100">
-              <Building2 className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-blue-600">Dental</p>
-              <p className="text-2xl font-bold text-blue-800">
-                {isLoading ? "—" : companyCounts.dental}
-              </p>
-            </div>
-          </div>
-
-          {role === "ADMIN" && (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/20 transition-shadow">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-                <UsersRound className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Equipes ativas</p>
-                <p className="text-2xl font-bold text-(--black)">
-                  {isLoading ? "—" : (totalTeams ?? "—")}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 flex items-center gap-4 hover:shadow-md/20 transition-shadow">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 border border-green-100">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">Concluídas</p>
-              <p className="text-2xl font-bold text-(--black)">
-                {isLoading ? "—" : (role === "ADMIN" ? concludedAdmin.length : concludedUser.length)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((stat, i) => (
             <StatCard
               key={i}
@@ -518,7 +453,10 @@ export default function Page() {
               type="text"
               placeholder="Buscar por empresa ou beneficiário..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setUserPage(0);
+              }}
               className="w-full px-2 border-b border-white hover:border-(--blue-icon) focus:border-(--blue-icon) focus:outline-none transition"
             />
           </div>
@@ -573,11 +511,6 @@ export default function Page() {
                 id="filterStatus"
                 label="Todos os status"
                 value={role === "USER" ? userFilterStatus : filterStatus}
-                onChange={(val) =>
-                  role === "USER"
-                    ? setUserFilterStatus(val)
-                    : setFilterStatus(val)
-                }
                 options={[
                   { label: "Todos os status", value: "" },
                   {
@@ -611,23 +544,31 @@ export default function Page() {
                     value: role === "USER" ? "CONCLUIDO" : "concluido",
                   },
                 ]}
+                onChange={(val) => {
+                  if (role === "USER") {
+                    setUserFilterStatus(val);
+                    setUserPage(0);
+                  } else setFilterStatus(val);
+                }}
               />
             </div>
           </div>
         </div>
 
         {/* ── Lista ── */}
-        {!isLoading && (filterStatus === "concluido" || userFilterStatus === "CONCLUIDO") && (
-          <p className="text-sm text-gray-500 italic -mb-2">
-            Exibindo apenas movimentações concluídas.
-          </p>
-        )}
+        {!isLoading &&
+          (filterStatus === "concluido" ||
+            userFilterStatus === "CONCLUIDO") && (
+            <p className="text-sm text-gray-500 italic -mb-2">
+              Exibindo apenas movimentações concluídas.
+            </p>
+          )}
         {isLoading ? (
           <p className="text-center text-2xl italic opacity-60 py-8">
             Carregando...
           </p>
         ) : role === "USER" ? (
-          filteredUser.length === 0 ? (
+          filteredUserAll.length === 0 ? (
             <p className="text-center text-2xl italic opacity-60">
               {hasFilters
                 ? "Nenhuma movimentação encontrada"
@@ -641,7 +582,8 @@ export default function Page() {
                     label: m.status,
                     className: "bg-gray-50 text-gray-700 border-gray-200",
                   };
-                  const tipo = tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
+                  const tipo =
+                    tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
                   const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
                   return (
                     <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
@@ -684,6 +626,13 @@ export default function Page() {
                   );
                 })}
               </ul>
+              {userTotalPages > 1 && (
+                <Pagination
+                  page={userPage}
+                  totalPages={userTotalPages}
+                  onChange={setUserPage}
+                />
+              )}
             </div>
           )
         ) : filteredAdmin.length === 0 ? (
@@ -704,6 +653,7 @@ export default function Page() {
                   observacao={movement.observacao}
                   modalidade={movement.modalidade}
                   beneficiarios={movement.beneficiariosMovimentacao}
+                  searchQuery={search}
                 />
               ))}
             </div>
@@ -719,86 +669,98 @@ export default function Page() {
         {/* ── Concluídos ── */}
         {!isLoading &&
           filterStatus !== "concluido" &&
-          userFilterStatus !== "CONCLUIDO" && (
-            (() => {
-              const list = role === "USER" ? concludedUser : concludedAdmin;
-              if (list.length === 0) return null;
-              return (
-                <div className="rounded-2xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setShowConcluidos((p) => !p)}
-                    className="w-full flex items-center justify-between gap-3 px-5 py-4 cursor-pointer hover:bg-green-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
-                      <span className="font-semibold text-green-800">
-                        Concluídos
-                      </span>
-                      <span className="inline-flex items-center rounded-full border border-green-200 bg-white px-2 py-0.5 text-xs font-semibold text-green-700">
-                        {list.length}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-green-600 transition-transform duration-200 ${showConcluidos ? "rotate-180" : ""}`}
-                    />
-                  </button>
+          userFilterStatus !== "CONCLUIDO" &&
+          (() => {
+            const list = role === "USER" ? concludedUser : concludedAdmin;
+            if (list.length === 0) return null;
+            return (
+              <div className="rounded-2xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowConcluidos((p) => !p)}
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 cursor-pointer hover:bg-green-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                    <span className="font-semibold text-green-800">
+                      Concluídos
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-green-200 bg-white px-2 py-0.5 text-xs font-semibold text-green-700">
+                      {list.length}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-green-600 transition-transform duration-200 ${showConcluidos ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-                  {showConcluidos && (
-                    <div className="border-t border-green-200 p-4 sm:p-5">
-                      {role === "USER" ? (
-                        <ul className="grid gap-2">
-                          {(list as typeof concludedUser).map((m) => {
-                            const tipo = tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
-                            return (
-                              <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
-                                <Link
-                                  href={`/beneficiarios/${m.idBeneficiario}`}
-                                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-green-200 bg-white px-3 py-3 hover:border-green-300 hover:bg-green-50 transition-all duration-100"
-                                >
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    {tipo && (
-                                      <div className={`shrink-0 ${tipo.className}`}>
-                                        <tipo.Icon className="h-4 w-4" />
-                                      </div>
-                                    )}
-                                    <div className="min-w-0">
-                                      <p className="font-semibold text-sm truncate">{m.nomeBeneficiario}</p>
-                                      <p className="text-xs text-gray-500 truncate">
-                                        {tipo?.label}{m.nomeEmpresa && <> &middot; {m.nomeEmpresa}</>}
-                                      </p>
-                                      <p className="text-xs text-gray-400">{parseDate(m.dataMovimentacao)}</p>
+                {showConcluidos && (
+                  <div className="border-t border-green-200 p-4 sm:p-5">
+                    {role === "USER" ? (
+                      <ul className="grid gap-2">
+                        {(list as typeof concludedUser).map((m) => {
+                          const tipo =
+                            tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
+                          return (
+                            <li
+                              key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}
+                            >
+                              <Link
+                                href={`/beneficiarios/${m.idBeneficiario}`}
+                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-green-200 bg-white px-3 py-3 hover:border-green-300 hover:bg-green-50 transition-all duration-100"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  {tipo && (
+                                    <div
+                                      className={`shrink-0 ${tipo.className}`}
+                                    >
+                                      <tipo.Icon className="h-4 w-4" />
                                     </div>
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-sm truncate">
+                                      {m.nomeBeneficiario}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">
+                                      {tipo?.label}
+                                      {m.nomeEmpresa && (
+                                        <> &middot; {m.nomeEmpresa}</>
+                                      )}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      {parseDate(m.dataMovimentacao)}
+                                    </p>
                                   </div>
-                                  <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 shrink-0">
-                                    Concluído
-                                  </span>
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {(list as typeof concludedAdmin).map((movement, i) => (
-                            <MovementParentCard
-                              key={i}
-                              dataMovimentacao={movement.dataMovimentacao}
-                              id={movement.idMovimentacao}
-                              nomeEmpresa={movement.nomeEmpresa}
-                              observacao={movement.observacao}
-                              modalidade={movement.modalidade}
-                              beneficiarios={movement.beneficiariosMovimentacao}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })()
-          )}
+                                </div>
+                                <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 shrink-0">
+                                  Concluído
+                                </span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {(list as typeof concludedAdmin).map((movement, i) => (
+                          <MovementParentCard
+                            key={i}
+                            dataMovimentacao={movement.dataMovimentacao}
+                            id={movement.idMovimentacao}
+                            nomeEmpresa={movement.nomeEmpresa}
+                            observacao={movement.observacao}
+                            modalidade={movement.modalidade}
+                            beneficiarios={movement.beneficiariosMovimentacao}
+                            searchQuery={search}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
       </div>
     </div>
   );

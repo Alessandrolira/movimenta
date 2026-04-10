@@ -26,7 +26,7 @@ export const TeamCard = ({ nome, id, analistas }: TeamCardProps) => {
           {handleSeniorAnalist?.nome || "SEM RESPONSÁVEL"}
         </p>
       </div>
-      <div className="p-4 space-y-2">
+      <div className="flex-1 p-4 space-y-2">
         <p className="text-xs font-semibold text-(--cinza)">ANALISTAS:</p>
         <ul className="items-start gap-2 rounded-lg bg-(--light-gray) px-3 py-2 border border-gray-200 inset-shadow-sm/10 text-sm text-gray-600 overflow-y-auto max-h-32">
           {analistas && analistas.length > 0 ? (

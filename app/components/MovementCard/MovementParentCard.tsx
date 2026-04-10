@@ -27,6 +27,7 @@ interface MovementParentProps {
   observacao: string;
   modalidade: string;
   beneficiarios: BeneficiaryMovimentsTypes[];
+  searchQuery?: string;
 }
 
 type ModalidadeConfig = {
@@ -146,9 +147,16 @@ export const MovementParentCard = ({
   observacao,
   modalidade,
   beneficiarios,
+  searchQuery = "",
 }: MovementParentProps) => {
   const { Icon, iconClass } = getModalidade(modalidade);
   const tipoGroups = groupByTipo(beneficiarios);
+
+  const q = searchQuery.trim().toLowerCase();
+  const matchedBeneficiarios =
+    q && !nomeEmpresa.toLowerCase().includes(q)
+      ? beneficiarios.filter((b) => b.nome.toLowerCase().includes(q))
+      : [];
   const {
     Icon: StatusIcon,
     label: statusLabel,
@@ -183,6 +191,21 @@ export const MovementParentCard = ({
             {beneficiarios.length}
           </span>
         </div>
+
+        {/* Beneficiários encontrados na busca */}
+        {matchedBeneficiarios.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {matchedBeneficiarios.map((b) => (
+              <span
+                key={b.idBeneficiario}
+                className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-(--azul)"
+              >
+                <Search className="h-3 w-3 shrink-0" aria-hidden />
+                {b.nome}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Breakdown por tipo */}
         {Object.keys(tipoGroups).length > 0 && (
