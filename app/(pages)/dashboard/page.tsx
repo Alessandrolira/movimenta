@@ -164,13 +164,25 @@ export default function Page() {
 
   async function fetchAdminMovements(p: number) {
     const res = await api.get(`/movimentacao?page=${p}`);
-    setMovements(res.data?.content ?? res.data ?? []);
-    setTotalPages(res.data?.totalPages ?? 0);
+    const data = res.data;
+    const content = Array.isArray(data?.content)
+      ? data.content
+      : Array.isArray(data)
+        ? data
+        : [];
+    setMovements(content);
+    setTotalPages(data?.totalPages ?? 0);
   }
 
   async function fetchUserMovements() {
     const res = await api.get("/movimentacao/user");
-    setUserMovements(res.data ?? []);
+    const data = res.data;
+    const content = Array.isArray(data?.content)
+      ? data.content
+      : Array.isArray(data)
+        ? data
+        : [];
+    setUserMovements(content);
   }
 
   useEffect(() => {
