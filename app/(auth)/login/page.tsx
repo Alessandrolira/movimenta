@@ -26,6 +26,7 @@ export default function Login() {
         login: email,
         password: password,
       });
+      console.log("API Base URL:", process.env.NEXT_PUBLIC_API_JAVA);
       if (res.status == 200) {
         await setAuthCookie(res.data.token);
         startTransition(() => {
