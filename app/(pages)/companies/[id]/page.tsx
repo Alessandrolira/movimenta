@@ -12,12 +12,15 @@ import {
   CreditCard,
   Files,
   Layers,
+  LinkIcon,
   RefreshCw,
   UserMinus,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
+import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { DadosGeraisType } from "@/app/types/DadosGeraisType";
 import { IconType } from "react-icons";
 import { GiHealthNormal } from "react-icons/gi";
@@ -38,6 +41,56 @@ export default function Page() {
     { label: string; totalVidas: number }[]
   >([]);
   const [reativando, setReativando] = useState<string | null>(null);
+  const [desvinculando, setDesvinculando] = useState<string | null>(null);
+  const [showVincular, setShowVincular] = useState(false);
+  const [emailsDisponiveis, setEmailsDisponiveis] = useState<string[]>([]);
+  const [emailSelecionado, setEmailSelecionado] = useState("");
+  const [vinculando, setVinculando] = useState(false);
+  const [erroVincular, setErroVincular] = useState("");
+
+  async function desvincularUsuario(email: string) {
+    setDesvinculando(email);
+    try {
+      await api.post("/empresas/desvincularUsuarioAEmpresa", { email, idEmpresa });
+      await getCompanies();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDesvinculando(null);
+    }
+  }
+
+  async function abrirVincular() {
+    setErroVincular("");
+    setEmailSelecionado("");
+    try {
+      const res = await api.get("/auth");
+      setEmailsDisponiveis(
+        res.status === 204 ? [] : (res.data ?? []).map((u: { email: string }) => u.email),
+      );
+    } catch {
+      setEmailsDisponiveis([]);
+    }
+    setShowVincular(true);
+  }
+
+  async function vincularUsuario() {
+    if (!emailSelecionado) return;
+    setVinculando(true);
+    setErroVincular("");
+    try {
+      await api.post("/empresas/adicionarUsuarioAEmpresa", {
+        email: emailSelecionado,
+        idEmpresa,
+      });
+      setShowVincular(false);
+      await getCompanies();
+    } catch {
+      setErroVincular("Não foi possível vincular o usuário. Tente novamente.");
+    } finally {
+      setVinculando(false);
+    }
+  }
 
   async function reativarCadastro(idUsuario: string) {
     setReativando(idUsuario);
@@ -249,15 +302,61 @@ export default function Page() {
                   {company?.acessos?.length || 0} acesso(s) cadastrados
                 </p>
               </div>
-              <Link
-                href={`/pre-register?idEmpresa=${idEmpresa}`}
-                className="bg-(--azul) hover:bg-(--blue-icon) text-white rounded-lg py-2 px-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-100 active:scale-95 w-full sm:w-auto text-sm whitespace-nowrap"
-              >
-                Adicionar acesso
-                <FaUserPlus />
-              </Link>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                  onClick={abrirVincular}
+                  className="border border-(--azul) text-(--azul) hover:bg-blue-50 rounded-lg py-2 px-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-100 active:scale-95 flex-1 sm:flex-none text-sm whitespace-nowrap"
+                >
+                  Vincular existente
+                  <LinkIcon className="h-4 w-4" />
+                </button>
+                <Link
+                  href={`/pre-register?idEmpresa=${idEmpresa}`}
+                  className="bg-(--azul) hover:bg-(--blue-icon) text-white rounded-lg py-2 px-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-100 active:scale-95 flex-1 sm:flex-none text-sm whitespace-nowrap"
+                >
+                  Novo acesso
+                  <FaUserPlus />
+                </Link>
+              </div>
             </div>
           </div>
+
+          {showVincular && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-(--azul)">Vincular usuário existente</p>
+                <button
+                  onClick={() => setShowVincular(false)}
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {emailsDisponiveis.length === 0 ? (
+                <p className="text-sm italic text-gray-500">Nenhum usuário disponível para vincular.</p>
+              ) : (
+                <>
+                  <CustomSelect
+                    id="emailVincular"
+                    label="Selecione um email..."
+                    value={emailSelecionado}
+                    onChange={setEmailSelecionado}
+                    options={emailsDisponiveis.map((e) => ({ label: e, value: e }))}
+                  />
+                  {erroVincular && (
+                    <p className="text-xs text-red-600">{erroVincular}</p>
+                  )}
+                  <button
+                    onClick={vincularUsuario}
+                    disabled={!emailSelecionado || vinculando}
+                    className="w-full bg-(--azul) hover:bg-(--blue-icon) text-white rounded-lg py-2 text-sm font-medium transition-all duration-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {vinculando ? "Vinculando..." : "Confirmar"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           {isLoading ? (
             <p className="text-center text-lg italic opacity-60 py-6">
@@ -299,6 +398,7 @@ export default function Page() {
                     };
                     const isExpired = acesso.status === "CADASTRO_EXPIRADO";
                     const isReativando = reativando === acesso.idUsuario;
+                    const isDesvinculando = desvinculando === acesso.email;
                     return (
                       <li
                         key={index}
@@ -316,15 +416,11 @@ export default function Page() {
                           {isExpired && (
                             <div className="relative group/tip">
                               <button
-                                onClick={() =>
-                                  reativarCadastro(acesso.idUsuario)
-                                }
+                                onClick={() => reativarCadastro(acesso.idUsuario)}
                                 disabled={isReativando}
                                 className="flex items-center justify-center rounded-full p-1 text-orange-500 hover:bg-orange-50 hover:text-orange-600 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
                               >
-                                <RefreshCw
-                                  className={`h-3.5 w-3.5 ${isReativando ? "animate-spin" : ""}`}
-                                />
+                                <RefreshCw className={`h-3.5 w-3.5 ${isReativando ? "animate-spin" : ""}`} />
                               </button>
                               <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden group-hover/tip:flex">
                                 <span className="whitespace-nowrap rounded-lg bg-(--azul) px-2.5 py-1.5 text-xs font-medium text-white shadow-md">
@@ -333,6 +429,20 @@ export default function Page() {
                               </div>
                             </div>
                           )}
+                          <div className="relative group/desvincular">
+                            <button
+                              onClick={() => desvincularUsuario(acesso.email)}
+                              disabled={isDesvinculando}
+                              className="flex items-center justify-center rounded-full p-1 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+                            >
+                              <X className={`h-3.5 w-3.5 ${isDesvinculando ? "animate-spin" : ""}`} />
+                            </button>
+                            <div className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2 z-50 opacity-0 group-hover/desvincular:opacity-100 transition-opacity duration-150">
+                              <span className="whitespace-nowrap rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-medium text-white shadow-md">
+                                Desvincular acesso
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </li>
                     );
