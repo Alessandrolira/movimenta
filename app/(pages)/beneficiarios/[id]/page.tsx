@@ -10,6 +10,7 @@ import {
   Clock,
   CreditCard,
   FileText,
+  Download,
   MapPin,
   RefreshCw,
   Send,
@@ -18,6 +19,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
+import JSZip from "jszip";
 import { formatCPF, parseDateTime } from "@/app/utils/format";
 import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
 
@@ -117,6 +119,7 @@ export default function Page() {
     src: string;
   } | null>(null);
   const [docLoading, setDocLoading] = useState<string | null>(null);
+  const [baixandoZip, setBaixandoZip] = useState<"beneficiario" | "empresa" | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -140,6 +143,34 @@ export default function Page() {
     }
     load();
   }, [id]);
+
+  async function baixarZip(docs: Documento[], tipo: "beneficiario" | "empresa") {
+    setBaixandoZip(tipo);
+    try {
+      const zip = new JSZip();
+      await Promise.all(
+        docs.map(async (doc, i) => {
+          const res = await api.get(`/movimentacao/documentos/stream`, {
+            params: { caminho: doc.url },
+            responseType: "blob",
+          });
+          const nomeArquivo = doc.nome || `documento_${i + 1}`;
+          zip.file(nomeArquivo, res.data);
+        }),
+      );
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = tipo === "beneficiario" ? "documentos_beneficiario.zip" : "documentos_empresa.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBaixandoZip(null);
+    }
+  }
 
   async function openDocumento(doc: Documento) {
     setDocLoading(doc.url);
@@ -324,9 +355,19 @@ export default function Page() {
 
           {documentos.documentosBeneficiario.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-gray-500">
-                Documentos do Beneficiário
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Documentos do Beneficiário
+                </p>
+                <button
+                  onClick={() => baixarZip(documentos.documentosBeneficiario, "beneficiario")}
+                  disabled={baixandoZip === "beneficiario"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-(--light-gray) px-2.5 py-1 text-xs font-medium text-gray-600 hover:border-(--blue-icon) hover:text-(--azul) transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {baixandoZip === "beneficiario" ? "Baixando..." : "Baixar ZIP"}
+                </button>
+              </div>
               <ul className="space-y-1.5">
                 {documentos.documentosBeneficiario.map((doc, i) => (
                   <li
@@ -351,9 +392,19 @@ export default function Page() {
 
           {documentos.documentosEmpresa.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-gray-500">
-                Documentos da Empresa
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Documentos da Empresa
+                </p>
+                <button
+                  onClick={() => baixarZip(documentos.documentosEmpresa, "empresa")}
+                  disabled={baixandoZip === "empresa"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-(--light-gray) px-2.5 py-1 text-xs font-medium text-gray-600 hover:border-(--blue-icon) hover:text-(--azul) transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {baixandoZip === "empresa" ? "Baixando..." : "Baixar ZIP"}
+                </button>
+              </div>
               <ul className="space-y-1.5">
                 {documentos.documentosEmpresa.map((doc, i) => (
                   <li

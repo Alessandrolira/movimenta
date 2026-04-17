@@ -14,13 +14,13 @@ import {
   Layers,
   LinkIcon,
   RefreshCw,
+  Search,
   UserMinus,
   UserPlus,
   Users,
   X,
 } from "lucide-react";
 import StatCard from "@/app/components/StatCard/StatCard";
-import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { DadosGeraisType } from "@/app/types/DadosGeraisType";
 import { IconType } from "react-icons";
 import { GiHealthNormal } from "react-icons/gi";
@@ -45,6 +45,7 @@ export default function Page() {
   const [showVincular, setShowVincular] = useState(false);
   const [emailsDisponiveis, setEmailsDisponiveis] = useState<string[]>([]);
   const [emailSelecionado, setEmailSelecionado] = useState("");
+  const [buscaEmail, setBuscaEmail] = useState("");
   const [vinculando, setVinculando] = useState(false);
   const [erroVincular, setErroVincular] = useState("");
 
@@ -71,6 +72,7 @@ export default function Page() {
     } catch {
       setEmailsDisponiveis([]);
     }
+    setBuscaEmail("");
     setShowVincular(true);
   }
 
@@ -336,13 +338,42 @@ export default function Page() {
                 <p className="text-sm italic text-gray-500">Nenhum usuário disponível para vincular.</p>
               ) : (
                 <>
-                  <CustomSelect
-                    id="emailVincular"
-                    label="Selecione um email..."
-                    value={emailSelecionado}
-                    onChange={setEmailSelecionado}
-                    options={emailsDisponiveis.map((e) => ({ label: e, value: e }))}
-                  />
+                  <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-1.5">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar email..."
+                      value={buscaEmail}
+                      onChange={(e) => { setBuscaEmail(e.target.value); setEmailSelecionado(""); }}
+                      className="w-full text-sm outline-none bg-transparent placeholder-gray-400"
+                    />
+                  </div>
+                  {(() => {
+                    const filtrados = emailsDisponiveis.filter((e) =>
+                      e.toLowerCase().includes(buscaEmail.toLowerCase()),
+                    );
+                    return filtrados.length === 0 ? (
+                      <p className="text-xs italic text-gray-400 px-1">Nenhum email encontrado.</p>
+                    ) : (
+                      <ul className="max-h-36 overflow-y-auto rounded-lg border border-blue-200 bg-white divide-y divide-gray-100">
+                        {filtrados.map((email) => (
+                          <li key={email}>
+                            <button
+                              type="button"
+                              onClick={() => { setEmailSelecionado(email); setBuscaEmail(email); }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer ${
+                                emailSelecionado === email
+                                  ? "bg-blue-50 text-(--azul) font-medium"
+                                  : "hover:bg-gray-50 text-gray-700"
+                              }`}
+                            >
+                              {email}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
                   {erroVincular && (
                     <p className="text-xs text-red-600">{erroVincular}</p>
                   )}
