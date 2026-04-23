@@ -209,7 +209,7 @@ export default function Page() {
     try {
       await api.patch(`/movimentacao/alterStatus/${idBeneficiario}`, {
         novoStatus: newStatus,
-        descricaoDevolutivaOperadora: descricao ?? "",
+        statusDesc: descricao ?? "",
       });
       setMovement((prev) => {
         if (!prev) return prev;
@@ -238,7 +238,7 @@ export default function Page() {
     try {
       await api.patch(`/movimentacao/alterStatus/${idBeneficiario}`, {
         novoStatus,
-        descricaoDevolutivaOperadora: declinioText[idBeneficiario] ?? "",
+        statusDesc: declinioText[idBeneficiario] ?? "",
       });
       setMovement((prev) => {
         if (!prev) return prev;
