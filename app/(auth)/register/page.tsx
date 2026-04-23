@@ -15,12 +15,36 @@ export default function PreRegister() {
 
     const fd = new FormData(event.currentTarget);
     const password = fd.get("pwd-input");
+    const confirmPassword = fd.get("confirm-pwd-input");
 
-    const res = await api.post(`/auth/ativar?token=${validationToken}`, {
-      password: password,
-    });
-    if (res.status == 200) {
+    if (validationToken == null) {
+      alert("Token inválido ou expirado.");
+      return;
+    }
+
+    if (typeof password !== "string" || typeof confirmPassword !== "string") {
+      alert("Preencha os campos de senha corretamente.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert("As senhas não coincidem.");
+      return;
+    }
+
+    try {
+      const res = await api.post(`/auth/ativar?token=${validationToken}`, {
+        password: password,
+      });
+
+      if (res.status !== 200) {
+        alert("Não foi possível ativar sua conta. Tente novamente.");
+        return;
+      }
+
       router.push("/login");
+    } catch {
+      alert("Token inválido ou expirado.");
     }
   };
 
@@ -55,13 +79,13 @@ export default function PreRegister() {
               <label htmlFor="pwd-input" className="font-bold">
                 Senha:
               </label>
-              <Input id="pwd-input" type="password" />
+              <Input id="pwd-input" type="password" required={true} />
             </div>
             <div className="grid gap-2">
               <label htmlFor="confirm-pwd-input" className="font-bold">
                 Confirmar Senha:
               </label>
-              <Input id="confirm-pwd-input" type="password" />
+              <Input id="confirm-pwd-input" type="password" required={true} />
             </div>
             <button
               type="submit"
