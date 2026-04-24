@@ -4,5 +4,6 @@ export type BeneficiaryMovimentsTypes = {
   tipoMovimentacao: string;
   descricao: string;
   status: string;
+  statusDesc: string | null;
   timestamp: Date
 }

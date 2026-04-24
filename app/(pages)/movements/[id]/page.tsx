@@ -176,6 +176,12 @@ export default function Page() {
   const [todosConcluidosModal, setTodosConcluidosModal] = useState(false);
   const [feedbackPendente, setFeedbackPendente] = useState(false);
   const [declinioText, setDeclinioText] = useState<Record<string, string>>({});
+  const [carteirinhaText, setCarteirinhaText] = useState<
+    Record<string, string>
+  >({});
+  const [carteirinhaConfirmada, setCarteirinhaConfirmada] = useState<
+    Record<string, boolean>
+  >({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailsCache, setDetailsCache] = useState<
     Record<string, BeneficiarioDetail>
@@ -205,6 +211,16 @@ export default function Page() {
     newStatus: string,
     descricao?: string,
   ) => {
+    const beneficiario = movement?.beneficiariosMovimentacao.find(
+      (b) => b.idBeneficiario === idBeneficiario,
+    );
+    if (
+      newStatus === "CONCLUIDO" &&
+      beneficiario?.tipoMovimentacao === "INCLUSAO" &&
+      !descricao?.trim()
+    ) {
+      return;
+    }
     setUpdatingId(idBeneficiario);
     try {
       await api.patch(`/movimentacao/alterStatus/${idBeneficiario}`, {
@@ -217,12 +233,23 @@ export default function Page() {
           ...prev,
           beneficiariosMovimentacao: prev.beneficiariosMovimentacao.map((b) =>
             b.idBeneficiario === idBeneficiario
-              ? { ...b, status: newStatus }
+              ? {
+                  ...b,
+                  status: newStatus,
+                  statusDesc: descricao ?? b.statusDesc,
+                }
               : b,
           ),
         };
       });
       setDeclinioText((prev) => ({ ...prev, [idBeneficiario]: "" }));
+      setCarteirinhaText((prev) => ({ ...prev, [idBeneficiario]: "" }));
+      if (newStatus === "CONCLUIDO") {
+        setCarteirinhaConfirmada((prev) => ({
+          ...prev,
+          [idBeneficiario]: true,
+        }));
+      }
     } catch (err) {
       console.error("Erro ao atualizar status:", err);
     } finally {
@@ -233,12 +260,13 @@ export default function Page() {
   const handleConfirmarComEmail = async (
     idBeneficiario: string,
     novoStatus: string,
+    descricao?: string,
   ) => {
     setSendingId(idBeneficiario);
     try {
       await api.patch(`/movimentacao/alterStatus/${idBeneficiario}`, {
         novoStatus,
-        statusDesc: declinioText[idBeneficiario] ?? "",
+        statusDesc: descricao ?? declinioText[idBeneficiario] ?? "",
       });
       setMovement((prev) => {
         if (!prev) return prev;
@@ -246,12 +274,18 @@ export default function Page() {
           ...prev,
           beneficiariosMovimentacao: prev.beneficiariosMovimentacao.map((b) =>
             b.idBeneficiario === idBeneficiario
-              ? { ...b, status: novoStatus }
+              ? {
+                  ...b,
+                  status: novoStatus,
+                  statusDesc:
+                    descricao ?? declinioText[idBeneficiario] ?? b.statusDesc,
+                }
               : b,
           ),
         };
       });
       setDeclinioText((prev) => ({ ...prev, [idBeneficiario]: "" }));
+      setCarteirinhaText((prev) => ({ ...prev, [idBeneficiario]: "" }));
       setEmailToast(true);
       setTimeout(() => setEmailToast(false), 3500);
     } catch (err) {
@@ -265,11 +299,19 @@ export default function Page() {
     const lista = movement?.beneficiariosMovimentacao ?? [];
     if (
       lista.length > 0 &&
-      lista.every((b) => b.status?.toUpperCase() === "CONCLUIDO")
+      lista.every((b) => {
+        if (b.status?.toUpperCase() !== "CONCLUIDO") return false;
+        if (
+          b.tipoMovimentacao === "INCLUSAO" &&
+          !carteirinhaConfirmada[b.idBeneficiario]
+        )
+          return false;
+        return true;
+      })
     ) {
       setTodosConcluidosModal(true);
     }
-  }, [movement, isLoading]);
+  }, [movement, isLoading, carteirinhaConfirmada]);
 
   useEffect(() => {
     async function load() {
@@ -531,6 +573,13 @@ export default function Page() {
                             <ChevronDown className="h-3.5 w-3.5" />
                           )}
                         </button>
+                        {b.statusDesc && (
+                          <p
+                            className={`text-xs font-semibold border rounded-md px-2 py-0.5 truncate max-w-xs ${statusMap[b.status?.toUpperCase()]?.className ?? "bg-gray-50 text-gray-700 border-gray-300"}`}
+                          >
+                            {b.statusDesc}
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1 shrink-0">
                         {statusOptions.map((opt) => {
@@ -544,6 +593,32 @@ export default function Page() {
                               disabled={isUpdating}
                               onClick={() => {
                                 if (
+                                  opt.value === "CONCLUIDO" &&
+                                  b.tipoMovimentacao === "INCLUSAO"
+                                ) {
+                                  setCarteirinhaText((prev) => ({
+                                    ...prev,
+                                    [b.idBeneficiario]:
+                                      prev[b.idBeneficiario] ?? "",
+                                  }));
+                                  setMovement((prev) => {
+                                    if (!prev) return prev;
+                                    return {
+                                      ...prev,
+                                      beneficiariosMovimentacao:
+                                        prev.beneficiariosMovimentacao.map(
+                                          (ben) =>
+                                            ben.idBeneficiario ===
+                                            b.idBeneficiario
+                                              ? {
+                                                  ...ben,
+                                                  status: opt.value,
+                                                }
+                                              : ben,
+                                        ),
+                                    };
+                                  });
+                                } else if (
                                   opt.value === "PENDENTE_OPERADORA" ||
                                   opt.value === "DECLINIO"
                                 ) {
@@ -727,6 +802,49 @@ export default function Page() {
                         </button>
                       </div>
                     )}
+
+                    {b.status?.toUpperCase() === "CONCLUIDO" &&
+                      b.tipoMovimentacao === "INCLUSAO" && (
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            required
+                            minLength={1}
+                            maxLength={50}
+                            placeholder="Informe o número da carteirinha..."
+                            value={carteirinhaText[b.idBeneficiario] ?? ""}
+                            onChange={(e) =>
+                              setCarteirinhaText((prev) => ({
+                                ...prev,
+                                [b.idBeneficiario]: e.target.value,
+                              }))
+                            }
+                            className="flex-1 border border-green-200 rounded-xl px-4 py-2 text-sm bg-white focus:outline-none focus:border-green-400 transition-all"
+                          />
+                          <button
+                            type="button"
+                            disabled={
+                              !carteirinhaText[b.idBeneficiario]?.trim() ||
+                              sendingId === b.idBeneficiario
+                            }
+                            onClick={() => {
+                              const valor = carteirinhaText[b.idBeneficiario]?.trim();
+                              if (!valor) return;
+                              handleStatusChange(
+                                b.idBeneficiario,
+                                "CONCLUIDO",
+                                valor,
+                              );
+                            }}
+                            className="flex items-center gap-1.5 rounded-xl border border-green-300 bg-green-50 px-3 py-2 text-xs font-medium text-green-700 hover:bg-green-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            {sendingId === b.idBeneficiario ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : null}
+                            Confirmar
+                          </button>
+                        </div>
+                      )}
                   </div>
                 </li>
               );
