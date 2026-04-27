@@ -1,4 +1,4 @@
-import { CheckCircle2, Plus, Users, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, Plus, UserPlus, Users, X, AlertCircle } from "lucide-react";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { Input } from "@/app/components/ui/Input/Input";
 import { useState } from "react";
@@ -273,22 +273,16 @@ export default function NewMovementCard({
               />
             </div>
           </div>
-          <div className="space-y-4 md:space-y-0 md:flex items-center justify-between">
-            <h2 className="font-bold flex gap-2">
-              <Users className="text-(--blue-icon)" />
-              Beneficiários ({beneficiaries.length})
-            </h2>
-            <div className="md:flex gap-2 space-y-2 md:space-y-0">
-              <button
-                type="button"
-                onClick={addBenef}
-                className="flex w-full md:w-auto gap-2 bg-white text-sm p-2 rounded border border-gray-200 shadow-md/20 hover:bg-(--branco) active:inset-shadow-sm/20 active:shadow-none cursor-pointer transition-all duration-50"
-              >
-                <Plus />
-                <p>Beneficiario</p>
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-(--blue-icon)" />
+            <h2 className="font-bold">Beneficiários</h2>
+            {beneficiaries.length > 0 && (
+              <span className="text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">
+                {beneficiaries.length} adicionado{beneficiaries.length > 1 ? "s" : ""}
+              </span>
+            )}
           </div>
+
           {/* Banner de erro */}
           {error && (
             <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -305,21 +299,40 @@ export default function NewMovementCard({
             </div>
           )}
 
-          {beneficiaries.length > 0 && (
+          {beneficiaries.length === 0 ? (
+            <button
+              type="button"
+              onClick={addBenef}
+              className="w-full flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 py-10 text-gray-400 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-500 transition-all duration-150 cursor-pointer group"
+            >
+              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-all">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold text-sm">Adicionar beneficiário</p>
+                <p className="text-xs mt-0.5">Clique para adicionar o primeiro beneficiário à movimentação</p>
+              </div>
+            </button>
+          ) : (
             <>
               {beneficiaries.map((benef, index) => (
                 <div
                   key={index}
                   className="space-y-4 bg-white/60 rounded-lg border border-gray-300 p-4 inset-shadow-sm/20"
                 >
-                  <div className="font-bold flex justify-between">
-                    <p>Beneficiário {index + 1}</p>
+                  <div className="font-bold flex justify-between items-center">
+                    <p className="flex items-center gap-2">
+                      <span className="flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                        {index + 1}
+                      </span>
+                      Beneficiário {index + 1}
+                    </p>
                     <button
                       type="button"
                       onClick={() => deleteBenef(index)}
-                      className="cursor-pointer"
+                      className="cursor-pointer text-gray-400 hover:text-red-500 transition-colors"
                     >
-                      <X />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                   <Beneficiary
@@ -336,21 +349,31 @@ export default function NewMovementCard({
                   />
                 </div>
               ))}
+
+              <button
+                type="button"
+                onClick={addBenef}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 py-4 text-sm text-gray-400 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-500 transition-all duration-150 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar outro beneficiário
+              </button>
+
               <div className="space-y-2 md:space-y-0 md:flex gap-2 justify-end">
-                <button
-                  type="submit"
-                  disabled={isLoading || success}
-                  className="bg-(--green-btn) border border-green-400 text-(--branco) text-lg px-4 py-2 rounded-md w-full md:w-36 hover:text-(--branco) transition-all duration-100 active:inset-shadow-green-900 active:inset-shadow-sm/60 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Enviando..." : "Enviar"}
-                </button>
                 <button
                   type="button"
                   onClick={onClick}
                   disabled={isLoading}
-                  className="bg-(--red-btn) border border-red-200 text-(--branco) text-lg px-4 py-2 rounded-md w-full md:w-36 cursor-pointer hover:text-(--branco) active:inset-shadow-sm/60 active:inset-shadow-red-900 transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || success}
+                  className="rounded-lg bg-(--azul) px-4 py-2 text-sm font-medium text-white hover:bg-(--azul-escuro) transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Enviando..." : "Enviar"}
                 </button>
               </div>
             </>

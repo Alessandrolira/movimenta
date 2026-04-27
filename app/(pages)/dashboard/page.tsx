@@ -44,6 +44,7 @@ type UserMovementItem = {
   observacao: string;
   dataMovimentacao: string;
   status: string;
+  statusDesc?: string | null;
   modalidade?: string;
 };
 
@@ -134,6 +135,51 @@ function Pagination({
         <ChevronRight className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+function UserMovementCard({ m }: { m: UserMovementItem }) {
+  const st = statusMap[m.status?.toUpperCase()] ?? {
+    label: m.status,
+    className: "bg-gray-50 text-gray-700 border-gray-200",
+  };
+  const tipo = tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
+  const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
+  return (
+    <li>
+      <Link
+        href={`/beneficiarios/${m.idBeneficiario}`}
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border px-3 py-3 transition-all duration-100 inset-shadow-sm ${
+          "border-gray-200 bg-(--light-gray) hover:border-gray-300 hover:bg-gray-50"
+        }`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          {tipo && (
+            <div className={`shrink-0 ${tipo.className}`}>
+              <tipo.Icon className="h-4 w-4" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="font-semibold text-sm truncate">{m.nomeBeneficiario}</p>
+            <p className="text-xs text-gray-500 truncate">
+              {tipo?.label}
+              {m.nomeEmpresa && <> &middot; {m.nomeEmpresa}</>}
+            </p>
+            <p className="text-xs text-gray-400">{parseDateTime(m.dataMovimentacao)}</p>
+            {m.statusDesc && (
+              <span className={`mt-1 inline-block text-xs font-semibold border rounded-md px-2 py-0.5 ${statusMap[m.status?.toUpperCase()]?.className ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>
+                {m.statusDesc}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${st.className}`}>
+            {st.label}
+          </span>
+        </div>
+      </Link>
+    </li>
   );
 }
 
@@ -365,7 +411,7 @@ export default function Page() {
     [userMovements],
   );
 
-  const filteredUserAll = useMemo(() => {
+  const filteredUserAtivos = useMemo(() => {
     const q = search.toLowerCase();
     return userMovements.filter((m) => {
       const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
@@ -380,30 +426,39 @@ export default function Page() {
     });
   }, [userMovements, search, userFilterStatus]);
 
-  const userTotalPages = Math.max(
-    1,
-    Math.ceil(filteredUserAll.length / USER_PAGE_SIZE),
-  );
-
-  const filteredUser = useMemo(
-    () =>
-      filteredUserAll.slice(
-        userPage * USER_PAGE_SIZE,
-        (userPage + 1) * USER_PAGE_SIZE,
-      ),
-    [filteredUserAll, userPage],
-  );
-
-  const concludedUser = useMemo(() => {
+  const filteredUserConcluidos = useMemo(() => {
     const q = search.toLowerCase();
     return userMovements.filter((m) => {
       const matchSearch =
         !q ||
         m.nomeEmpresa.toLowerCase().includes(q) ||
         m.nomeBeneficiario.toLowerCase().includes(q);
-      return m.status?.toUpperCase() === "CONCLUIDO" && matchSearch;
+      const matchStatus = userFilterStatus
+        ? m.status?.toUpperCase() === userFilterStatus
+        : m.status?.toUpperCase() === "CONCLUIDO";
+      return matchSearch && matchStatus;
     });
-  }, [userMovements, search]);
+  }, [userMovements, search, userFilterStatus]);
+
+  const filteredUserAll = userFilterStatus
+    ? filteredUserAtivos
+    : [...filteredUserAtivos, ...filteredUserConcluidos];
+
+  const userTotalPages = Math.max(
+    1,
+    Math.ceil(filteredUserAtivos.length / USER_PAGE_SIZE),
+  );
+
+  const filteredUser = useMemo(
+    () =>
+      filteredUserAtivos.slice(
+        userPage * USER_PAGE_SIZE,
+        (userPage + 1) * USER_PAGE_SIZE,
+      ),
+    [filteredUserAtivos, userPage],
+  );
+
+  const concludedUser = filteredUserConcluidos;
 
   const stats = role === "USER" ? userStats : adminStats;
   const hasFilters =
@@ -584,73 +639,34 @@ export default function Page() {
             Carregando...
           </p>
         ) : role === "USER" ? (
-          filteredUserAll.length === 0 ? (
+          userMovements.length === 0 ? (
             <p className="text-center text-2xl italic opacity-60">
-              {hasFilters
-                ? "Nenhuma movimentação encontrada"
-                : userMovements.length === 0
-                  ? "Não há movimentações realizadas"
-                  : null}
+              Não há movimentações realizadas
             </p>
           ) : (
-            <div className="space-y-4">
-              <ul className="grid gap-2">
-                {filteredUser.map((m) => {
-                  const st = statusMap[m.status?.toUpperCase()] ?? {
-                    label: m.status,
-                    className: "bg-gray-50 text-gray-700 border-gray-200",
-                  };
-                  const tipo =
-                    tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
-                  const isConcluido = m.status?.toUpperCase() === "CONCLUIDO";
-                  return (
-                    <li key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}>
-                      <Link
-                        href={`/beneficiarios/${m.idBeneficiario}`}
-                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border px-3 py-3 transition-all duration-100 inset-shadow-sm ${
-                          isConcluido
-                            ? "border-green-200 bg-green-50 hover:border-green-300 hover:bg-green-100"
-                            : "border-gray-200 bg-(--light-gray) hover:border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {tipo && (
-                            <div className={`shrink-0 ${tipo.className}`}>
-                              <tipo.Icon className="h-4 w-4" />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">
-                              {m.nomeBeneficiario}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {tipo?.label}
-                              {m.nomeEmpresa && <> &middot; {m.nomeEmpresa}</>}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {parseDateTime(m.dataMovimentacao)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 shrink-0">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${st.className}`}
-                          >
-                            {st.label}
-                          </span>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-              {userTotalPages > 1 && (
-                <Pagination
-                  page={userPage}
-                  totalPages={userTotalPages}
-                  onChange={setUserPage}
-                />
-              )}
+            <div className="space-y-6">
+              {/* Bloco de ativas */}
+              {filteredUser.length === 0 && !userFilterStatus ? (
+                <p className="text-center text-sm italic opacity-60 py-4">
+                  Nenhuma movimentação em andamento
+                </p>
+              ) : filteredUser.length > 0 ? (
+                <div className="space-y-2">
+                  <ul className="grid gap-2">
+                    {filteredUser.map((m) => (
+                      <UserMovementCard key={`${m.idMovimentacao}-${m.idBeneficiario}`} m={m} />
+                    ))}
+                  </ul>
+                  {userTotalPages > 1 && (
+                    <Pagination
+                      page={userPage}
+                      totalPages={userTotalPages}
+                      onChange={setUserPage}
+                    />
+                  )}
+                </div>
+              ) : null}
+
             </div>
           )
         ) : filteredAdmin.length === 0 ? (
@@ -716,47 +732,9 @@ export default function Page() {
                   <div className="p-4 sm:p-5">
                     {role === "USER" ? (
                       <ul className="grid gap-2">
-                        {(list as typeof concludedUser).map((m) => {
-                          const tipo =
-                            tipoMap[m.tipoMovimentacao?.toUpperCase()] ?? null;
-                          return (
-                            <li
-                              key={`${m.idMovimentacao}-${m.nomeBeneficiario}`}
-                            >
-                              <Link
-                                href={`/beneficiarios/${m.idBeneficiario}`}
-                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-green-200 bg-white px-3 py-3 hover:border-green-300 hover:bg-green-50 transition-all duration-100"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  {tipo && (
-                                    <div
-                                      className={`shrink-0 ${tipo.className}`}
-                                    >
-                                      <tipo.Icon className="h-4 w-4" />
-                                    </div>
-                                  )}
-                                  <div className="min-w-0">
-                                    <p className="font-semibold text-sm truncate">
-                                      {m.nomeBeneficiario}
-                                    </p>
-                                    <p className="text-xs text-gray-500 truncate">
-                                      {tipo?.label}
-                                      {m.nomeEmpresa && (
-                                        <> &middot; {m.nomeEmpresa}</>
-                                      )}
-                                    </p>
-                                    <p className="text-xs text-gray-400">
-                                      {parseDateTime(m.dataMovimentacao)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 shrink-0">
-                                  Concluído
-                                </span>
-                              </Link>
-                            </li>
-                          );
-                        })}
+                        {(list as typeof concludedUser).map((m) => (
+                          <UserMovementCard key={`${m.idMovimentacao}-${m.idBeneficiario}`} m={m} />
+                        ))}
                       </ul>
                     ) : (
                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
