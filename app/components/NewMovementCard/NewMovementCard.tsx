@@ -1,13 +1,14 @@
-import { CheckCircle2, Plus, UserPlus, Users, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, Plus, UserPlus, Users, X, AlertCircle, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { CustomSelect } from "@/app/components/ui/Select/Select";
 import { Input } from "@/app/components/ui/Input/Input";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Beneficiary from "@/app/components/Beneficiary/Beneficiary";
 import { Label } from "../ui/Label/Label";
 import { BeneficiaryTypes } from "@/app/types/BeneficiaryTypes";
 import { api } from "@/services/api";
 import SendMovement from "@/services/sendMovement";
 import { onlyDigits } from "@/app/utils/format";
+import { downloadModeloSheet, parseMovimentacaoSheet } from "@/app/utils/movimentacaoSheet";
 
 interface NewMovementProps {
   companies: { label: string; value: string }[];
@@ -28,9 +29,28 @@ export default function NewMovementCard({
     { vinculo: File | null; pessoais: File[] }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [beneficiaryErrors, setBeneficiaryErrors] = useState<Record<number, Record<string, string>>>({});
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    setError(null);
+    try {
+      const imported = await parseMovimentacaoSheet(file);
+      setBeneficiaries(imported);
+      setBeneficiaryFiles(imported.map(() => ({ vinculo: null, pessoais: [] })));
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao importar a planilha.");
+    } finally {
+      setIsImporting(false);
+      e.target.value = "";
+    }
+  };
 
   const addBenef = () => {
     const newBenef: BeneficiaryTypes = {
@@ -240,11 +260,41 @@ export default function NewMovementCard({
   return (
     <div id="new-movement-scroll" className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-xs overflow-y-auto md:p-16">
       <div className="bg-(--bg-default) text-(--black) w-full rounded-lg border border-gray-300 shadow-lg">
-        <div className="flex p-6 border-b border-black/20 justify-between items-center">
+        <div className="flex p-6 border-b border-black/20 justify-between items-center gap-4 flex-wrap">
           <h2 className="font-bold text-2xl">Nova Movimentação</h2>
-          <button type="button" onClick={onClick} className="cursor-pointer">
-            <X />
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={downloadModeloSheet}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <Download className="h-4 w-4" />
+              Baixar planilha modelo
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleImport}
+            />
+            <button
+              type="button"
+              onClick={() => importInputRef.current?.click()}
+              disabled={isImporting}
+              className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isImporting ? (
+                <FileSpreadsheet className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              {isImporting ? "Importando..." : "Importar planilha"}
+            </button>
+            <button type="button" onClick={onClick} className="cursor-pointer ml-2">
+              <X />
+            </button>
+          </div>
         </div>
         <form className="p-8 space-y-6" onSubmit={handleMovement}>
           <div className="grid gap-2 md:grid-cols-3 md:gap-8">
